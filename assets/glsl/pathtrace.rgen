@@ -1,0 +1,104 @@
+#version 460
+#extension GL_NV_ray_tracing : require
+
+#include "payload.glsl"
+#include "sampling.glsl"
+#include "postprocess.glsl"
+
+const bool DO_ACCUMULATION = true;
+layout(push_constant) uniform PushConstant {
+	int accum_start_frame;
+} push;
+
+layout(set = 0, binding = 0) uniform Scene {
+    mat4 model;
+    mat4 view;
+    mat4 view_inverse;
+    mat4 projection;
+    mat4 projection_inverse;
+    mat4 model_view_projection;
+    uvec3 frame;
+} scene;
+layout(set = 1, binding = 0) uniform accelerationStructureNV topLevelAS;
+layout(set = 1, binding = 1, rgba32f) uniform image2D accumImage;
+layout(set = 1, binding = 2, rgba8) uniform image2D renderImage;
+
+layout(location = 0) rayPayloadNV Payload prd;
+
+void preparePayload( inout Payload prd, vec3 origin, vec3 direction )
+{
+	prd.hitValue    = vec3(0);
+	prd.depth       = 0;
+	prd.done        = 0;
+	prd.rayOrigin   = origin;
+	prd.rayDir      = direction;
+	prd.rayRange    = vec2(max(1.0f, length(origin.xyz)) * 1e-3f, 10000.0f);
+	prd.roughness   = 0;
+}
+
+void main() 
+{
+	uint rayFlags   = gl_RayFlagsOpaqueNV;
+	float tmin      = 0.001f;
+	int maxBounces  = 32;
+	int sampleCount = 8;
+	vec3 pixelColor = vec3(0);
+	
+	prd.rng = tea( gl_LaunchIDNV.x + gl_LaunchIDNV.y * gl_LaunchSizeNV.x, scene.frame.z );
+	
+	for( int i=0; i<sampleCount; i++ ) {
+    	// Subpixel jitter: send the ray through a different position inside the pixel
+    	// each time, to provide antialiasing.
+		const vec2 pixelCenter = vec2(gl_LaunchIDNV.xy) + vec2(nextRand(prd.rng), nextRand(prd.rng));
+    	const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeNV.xy);
+    	vec2 d = inUV * 2.0 - 1.0;
+		vec4 origin = scene.view_inverse * vec4(0,0,0,1);
+		//float tmin = max(1.0f, length(origin.xyz)) * 1e-3f;
+		vec4 target = scene.projection_inverse * vec4(d.x, d.y, 1, 1);
+		vec4 direction = scene.view_inverse * vec4(normalize(target.xyz), 0);
+
+		preparePayload( prd, origin.xyz, direction.xyz );
+		prd.sampleId = i;
+
+		vec3 accumulatedRayColor = vec3(1.0);
+		for(;;) {
+			traceNV(topLevelAS, // acceleration structure
+				rayFlags,       // rayFlags
+				0xFF,           // cullMask
+				0,              // sbtRecordOffset
+				0,              // sbtRecordStride
+				0,              // missIndex
+				prd.rayOrigin,  // ray origin
+				prd.rayRange.x, // ray min range
+				prd.rayDir,     // ray direction
+				prd.rayRange.y, // ray max range
+				0               // payload (location = 0)
+			);
+			accumulatedRayColor *= prd.hitValue;
+			if( prd.done == 1 ) {
+				break;
+			}
+			if( prd.depth > maxBounces ) {
+				accumulatedRayColor = vec3(0.0f);
+				break;
+			}
+		}
+		pixelColor += accumulatedRayColor;
+	}
+	pixelColor = (1.0f / sampleCount) * pixelColor;
+	if( DO_ACCUMULATION ) {
+    	float alpha    = 1.0f / float(scene.frame.z + 1 - push.accum_start_frame);
+    	vec3  oldColor = imageLoad(accumImage, ivec2(gl_LaunchIDNV.xy)).xyz;
+		pixelColor     = mix(oldColor, pixelColor, alpha);
+		// Replace NaN components with zero to prevent black 
+    	if(any(isnan(pixelColor))){
+			pixelColor = oldColor;
+		}
+		if(any(isinf(pixelColor))){
+			pixelColor = oldColor;
+		}
+		imageStore(accumImage, ivec2(gl_LaunchIDNV.xy), vec4(pixelColor, 1.0f));
+	}
+	pixelColor = gammaCorrect(pixelColor, 2.2);
+	imageStore(renderImage, ivec2(gl_LaunchIDNV.xy), vec4(pixelColor, 1.0f));
+}

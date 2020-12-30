@@ -1,0 +1,628 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.0.5",
+        "version" : "2.0"
+    },
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "CornellBox-Mirror.001",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 1,
+            "name" : "CornellBox-Mirror.000",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 2,
+            "name" : "CornellBox-Mirror.002",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 3,
+            "name" : "CornellBox-Mirror.003",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 4,
+            "name" : "CornellBox-Mirror.004",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 5,
+            "name" : "CornellBox-Mirror.005",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 6,
+            "name" : "CornellBox-Mirror.006",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        },
+        {
+            "mesh" : 7,
+            "name" : "CornellBox-Mirror.007",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "doubleSided" : true,
+            "emissiveFactor": [
+                15.0,
+                15.0,
+                15.0
+            ],
+            "name" : "light",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "floor",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.73,
+                    0.73,
+                    0.73,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "ceiling",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.73,
+                    0.73,
+                    0.73,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "backWall",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.73,
+                    0.73,
+                    0.73,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "rightWall",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.12,
+                    0.45,
+                    0.15,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "leftWall",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.65,
+                    0.05,
+                    0.05,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "shortBox",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.73,
+                    0.73,
+                    0.73,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.8945907354354858
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "tallBox",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.72,
+                    0.72,
+                    0.72,
+                    1
+                ],
+                "metallicFactor" : 0.9999999776482582,
+                "roughnessFactor" : 0
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "CornellBox-Mirror.001",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1
+                    },
+                    "indices" : 2,
+                    "material" : 0
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.000",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 3,
+                        "NORMAL" : 4
+                    },
+                    "indices" : 2,
+                    "material" : 1
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.002",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 5,
+                        "NORMAL" : 6
+                    },
+                    "indices" : 2,
+                    "material" : 2
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.003",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 7,
+                        "NORMAL" : 8
+                    },
+                    "indices" : 2,
+                    "material" : 3
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.004",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 9,
+                        "NORMAL" : 10
+                    },
+                    "indices" : 2,
+                    "material" : 4
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.005",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 11,
+                        "NORMAL" : 12
+                    },
+                    "indices" : 2,
+                    "material" : 5
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.006",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 13,
+                        "NORMAL" : 14
+                    },
+                    "indices" : 15,
+                    "material" : 6
+                }
+            ]
+        },
+        {
+            "name" : "CornellBox-Mirror.007",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 16,
+                        "NORMAL" : 17
+                    },
+                    "indices" : 18,
+                    "material" : 7
+                }
+            ]
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                0.23000000417232513,
+                0.1599999964237213,
+                -1.9800000190734863
+            ],
+            "min" : [
+                -0.23999999463558197,
+                -0.2199999988079071,
+                -1.9800000190734863
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5123,
+            "count" : 6,
+            "type" : "SCALAR"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                1,
+                0.9900000095367432,
+                0
+            ],
+            "min" : [
+                -1.0099999904632568,
+                -1.0399999618530273,
+                0
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 5,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                1,
+                0.9900000095367432,
+                -1.9900000095367432
+            ],
+            "min" : [
+                -1.0199999809265137,
+                -1.0399999618530273,
+                -1.9900000095367432
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 6,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 7,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                1,
+                -1.0399999618530273,
+                0
+            ],
+            "min" : [
+                -1.0199999809265137,
+                -1.0399999618530273,
+                -1.9900000095367432
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 8,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 9,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                1,
+                0.9900000095367432,
+                0
+            ],
+            "min" : [
+                1,
+                -1.0399999618530273,
+                -1.9900000095367432
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 10,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 11,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                -0.9900000095367432,
+                0.9900000095367432,
+                0
+            ],
+            "min" : [
+                -1.0199999809265137,
+                -1.0399999618530273,
+                -1.9900000095367432
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 12,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 13,
+            "componentType" : 5126,
+            "count" : 20,
+            "max" : [
+                0.699999988079071,
+                0.75,
+                0
+            ],
+            "min" : [
+                -0.05000000074505806,
+                0,
+                -0.6000000238418579
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 14,
+            "componentType" : 5126,
+            "count" : 20,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 15,
+            "componentType" : 5123,
+            "count" : 30,
+            "type" : "SCALAR"
+        },
+        {
+            "bufferView" : 16,
+            "componentType" : 5126,
+            "count" : 20,
+            "max" : [
+                0.03999999910593033,
+                0.09000000357627869,
+                0
+            ],
+            "min" : [
+                -0.7099999785423279,
+                -0.6700000166893005,
+                -1.2000000476837158
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 17,
+            "componentType" : 5126,
+            "count" : 20,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 18,
+            "componentType" : 5123,
+            "count" : 30,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 48
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 12,
+            "byteOffset" : 96
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 108
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 156
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 204
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 252
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 300
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 348
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 396
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 444
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 492
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 540
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 240,
+            "byteOffset" : 588
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 240,
+            "byteOffset" : 828
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 60,
+            "byteOffset" : 1068
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 240,
+            "byteOffset" : 1128
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 240,
+            "byteOffset" : 1368
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 60,
+            "byteOffset" : 1608
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 1668,
+            "uri" : "data:application/octet-stream;base64,j8J1vgrXIz6kcP2/j8J1vq5HYb6kcP2/H4VrPq5HYb6kcP2/H4VrPgrXIz6kcP2/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAABAAIAAAACAAMAAACAP6RwfT8AAACAAACAP7gehb8AAACApHB9v7gehb8AAACArkeBv6RwfT8AAACAAAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/XI+Cv6RwfT9SuP6/XI+Cv7gehb9SuP6/AACAP7gehb9SuP6/AACAP6RwfT9SuP6/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AACAP7gehb8AAACAAACAP7gehb9SuP6/XI+Cv7gehb9SuP6/pHB9v7gehb8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAACAP6RwfT9SuP6/AACAP7gehb9SuP6/AACAP7gehb8AAACAAACAP6RwfT8AAACAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAArkeBv6RwfT8AAACApHB9v7gehb8AAACAXI+Cv7gehb9SuP6/XI+Cv6RwfT9SuP6/5Pt/P5FooTsgpyS85Pt/P5FooTsgpyS85Pt/P5FooTsgpyS85Pt/P5FooTsgpyS8MzMzP3sULj6amRm/uB4FPgAAAACamRm/zcxMvYXrET+amRm/FK4HPwAAQD+amRm/zcxMvYXrET+amRm/uB4FPgAAAACamRm/uB4FPgAAAAAAAACAzcxMvYXrET8AAACAFK4HPwAAQD+amRm/zcxMvYXrET+amRm/zcxMvYXrET8AAACAFK4HPwAAQD8AAACAMzMzP3sULj4AAACAuB4FPgAAAAAAAACAuB4FPgAAAACamRm/MzMzP3sULj6amRm/FK4HPwAAQD8AAACAMzMzP3sULj4AAACAMzMzP3sULj6amRm/FK4HPwAAQD+amRm/AAAAgAAAAAAAAIC/AAAAgAAAAAAAAIC/AAAAgAAAAAAAAIC/AAAAgAAAAAAAAIC//h10v+Qtmr4AAACA/h10v+Qtmr4AAACA/h10v+Qtmr4AAACA/h10v+Qtmr4AAACApMGXvhV/dD8AAACApMGXvhV/dD8AAACApMGXvhV/dD8AAACApMGXvhV/dD8AAACADVWSPllSdb8AAACADVWSPllSdb8AAACADVWSPllSdb8AAACADVWSPllSdb8AAACAN6p1P68CkD4AAACAN6p1P68CkD4AAACAN6p1P68CkD4AAACAN6p1P68CkD4AAACAAAABAAIAAwAAAAIABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMACtcjPexRuL2amZm/KVwPvh+FK7+amZm/j8I1v0jh+r6amZm/FK4Hv+xRuD2amZm/FK4Hv+xRuD2amZm/j8I1v0jh+r6amZm/j8I1v0jh+r4AAACAFK4Hv+xRuD0AAACAj8I1v0jh+r6amZm/KVwPvh+FK7+amZm/KVwPvh+FK78AAACAj8I1v0jh+r4AAACACtcjPexRuL0AAACAKVwPvh+FK78AAACAKVwPvh+FK7+amZm/CtcjPexRuL2amZm/FK4Hv+xRuD0AAACACtcjPexRuL0AAACACtcjPexRuL2amZm/FK4Hv+xRuD2amZm/AAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/AAAAAAAAAIAAAIC/Fn90v6TBlz4AAACAFn90v6TBlz4AAACAFn90v6TBlz4AAACAFn90v6TBlz4AAACA5S2avv4ddL8AAACA5S2avv4ddL8AAACA5S2avv4ddL8AAACA5S2avv4ddL8AAACAFn90P6TBl74AAACAFn90P6TBl74AAACAFn90P6TBl74AAACAFn90P6TBl74AAACA5S2aPv4ddD8AAACA5S2aPv4ddD8AAACA5S2aPv4ddD8AAACA5S2aPv4ddD8AAACAAAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMA"
+        }
+    ]
+}

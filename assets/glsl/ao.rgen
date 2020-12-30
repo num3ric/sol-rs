@@ -1,0 +1,83 @@
+#version 460
+#extension GL_NV_ray_tracing : require
+
+#include "payload.glsl"
+#include "sampling.glsl"
+
+const bool DO_ACCUMULATION = true;
+layout(push_constant) uniform PushConstant {
+	int accum_start_frame;
+} push;
+
+layout(set = 0, binding = 0) uniform Scene {
+    mat4 model;
+    mat4 view;
+    mat4 view_inverse;
+    mat4 projection;
+    mat4 projection_inverse;
+    mat4 model_view_projection;
+    uvec3 frame;
+} scene;
+layout(set = 1, binding = 0) uniform accelerationStructureNV topLevelAS;
+layout(set = 1, binding = 1, rgba8) uniform image2D image;
+
+layout(location = 0) rayPayloadNV Payload prd;
+
+void preparePayload( inout Payload prd, vec3 origin, vec3 direction )
+{
+	prd.hitValue    = vec3(0);
+	prd.depth       = 0;
+	prd.done        = 0;
+	prd.rayOrigin   = origin;
+	prd.rayDir      = direction;
+	prd.rayRange    = vec2(max(1.0f, length(origin.xyz)) * 1e-3f, 10000.0f);
+	prd.roughness   = 0;
+}
+
+void main() 
+{
+	uint rayFlags = gl_RayFlagsOpaqueNV;
+	//float tmin = max(1.0f, length(origin.xyz)) * 1e-3f;
+	float tmin = 0.001f;
+	int max_samples = 4;
+	int sample_count = 4;
+	vec3 ao = vec3(0);
+	prd.rng = tea( gl_LaunchIDNV.x + gl_LaunchIDNV.y * gl_LaunchSizeNV.x, scene.frame.z );
+	for( int i=0; i<sample_count; i++ ) {
+    	// Subpixel jitter: send the ray through a different position inside the pixel
+    	// each time, to provide antialiasing.
+		const vec2 pixelCenter = vec2(gl_LaunchIDNV.xy) + nextRand2(prd.rng);
+    	const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeNV.xy);
+    	vec2 d = inUV * 2.0 - 1.0;
+		vec4 origin = scene.view_inverse * vec4(0,0,0,1);
+		vec4 target = scene.projection_inverse * vec4(d.x, d.y, 1, 1);
+		vec4 direction = scene.view_inverse * vec4(normalize(target.xyz), 0);
+
+		preparePayload( prd, origin.xyz, direction.xyz );
+		prd.sampleId = i;
+		for(;;) {
+			traceNV(topLevelAS, // acceleration structure
+				rayFlags,       // rayFlags
+				0xFF,           // cullMask
+				0,              // sbtRecordOffset
+				0,              // sbtRecordStride
+				0,              // missIndex
+				prd.rayOrigin,  // ray origin
+				prd.rayRange.x, // ray min range
+				prd.rayDir,     // ray direction
+				prd.rayRange.y, // ray max range
+				0               // payload (location = 0)
+			);
+			if( prd.done == 1 || prd.depth > max_samples )
+				break;
+		}
+		ao += 1.0f/float(max_samples) * prd.hitValue;
+	}
+	vec3 color = vec3(1.0f) - ao/float(sample_count);
+	if( DO_ACCUMULATION ) {
+    	float a         = 1.0f / float(scene.frame.z - push.accum_start_frame + 1);
+    	vec3  old_color = imageLoad(image, ivec2(gl_LaunchIDNV.xy)).xyz;
+		color = mix(old_color, color, a);
+	}
+	imageStore(image, ivec2(gl_LaunchIDNV.xy), vec4(color, 1.0f));
+}
