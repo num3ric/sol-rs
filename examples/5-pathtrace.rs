@@ -1,19 +1,8 @@
 //#![windows_subsystem = "windows"]
-use serde::{Deserialize, Serialize};
 use sol::prelude::*;
 use sol::ray;
 use sol::scene;
-use std::{env, fs};
 use winit::event::WindowEvent;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    scene_file: String,
-    cam_target: Vec3,
-    cam_position: Vec3,
-    cam_vfov: f32,
-    enable_skylight: bool,
-}
 
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
@@ -47,8 +36,7 @@ pub struct PerFrameData {
     pub desc_set: sol::DescriptorSet,
 }
 pub struct AppData {
-    pub config: Config,
-    pub model: scene::Model,
+    pub scene: scene::Scene,
     pub pipeline_layout: sol::PipelineLayout,
     pub layout_scene: sol::DescriptorSetLayout,
     pub layout_pass: sol::DescriptorSetLayout,
@@ -62,6 +50,8 @@ pub struct AppData {
     pub accumulation_start_frame: u32,
     pub accum_target: sol::Image2d,
     pub render_target: sol::Image2d,
+
+    pub enable_sky: bool, //Temporary shader hack for sky/sun light
 }
 
 fn create_image_target(
@@ -91,7 +81,7 @@ fn create_image_target(
 fn build_pipeline_sbt(
     context: &Arc<sol::Context>,
     pipeline_layout: &sol::PipelineLayout,
-    enable_skylight: bool,
+    enable_sky: bool,
 ) -> (ray::Pipeline, ray::ShaderBindingTable) {
     let pipeline = ray::Pipeline::new(
         context.clone(),
@@ -109,7 +99,7 @@ fn build_pipeline_sbt(
                 sol::util::find_asset("glsl/pathtrace.rchit").unwrap(),
                 vk::ShaderStageFlags::CLOSEST_HIT_NV,
             )
-            .specialization(&[enable_skylight as u32], 0)
+            .specialization(&[enable_sky as u32], 0)
             .name("AO_mat".to_string()),
     );
     let mut sbt = ray::ShaderBindingTable::new(
@@ -125,20 +115,23 @@ fn build_pipeline_sbt(
 }
 
 pub fn setup(app: &mut sol::App) -> AppData {
-    let args: Vec<String> = env::args().collect();
-    let json = fs::read_to_string(&args[1]).expect("Failed to load config file.");
-    let config: Config = serde_json::from_str(&json).unwrap();
-
     let context = &app.renderer.context;
-    let model = scene::load_model(
+    let index = std::env::args().position(|arg| arg == "--model").unwrap();
+    let scene = scene::load_scene(
         context.clone(),
-        &sol::util::find_asset(&config.scene_file).unwrap(),
+        &sol::util::find_asset(&std::env::args().nth(index + 1).expect("no gltf file given"))
+            .unwrap(),
     );
-    let scene_description = ray::SceneDescription::from_model(context.clone(), &model);
+    let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
-    let mut camera = scene::Camera::new(app.window.get_size());
-    camera.look_at(config.cam_position, config.cam_target, -Vec3::unit_y());
-    camera.set_vfov(config.cam_vfov);
+    let camera = match scene.camera {
+        Some(scene_camera) => {
+            let mut cam = scene_camera;
+            cam.set_window_size(app.window.get_size());
+            cam
+        }
+        None => scene::Camera::new(app.window.get_size()),
+    };
 
     let mut per_frame = Vec::<PerFrameData>::new();
 
@@ -222,7 +215,9 @@ pub fn setup(app: &mut sol::App) -> AppData {
                     .build(),
             ),
     );
-    let (pipeline, sbt) = build_pipeline_sbt(&context, &pipeline_layout, config.enable_skylight);
+
+    let enable_sky = std::env::args().any(|arg| arg == "--sky");
+    let (pipeline, sbt) = build_pipeline_sbt(&context, &pipeline_layout, enable_sky);
     let mut accum_target =
         create_image_target(&context, &app.window, vk::Format::R32G32B32A32_SFLOAT);
 
@@ -232,8 +227,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
 
     let render_target = create_image_target(&context, &app.window, vk::Format::R8G8B8A8_UNORM);
     AppData {
-        config,
-        model,
+        scene,
         pipeline_layout,
         layout_scene,
         layout_pass,
@@ -248,6 +242,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
         accumulation_start_frame: 0,
         accum_target,
         render_target,
+        enable_sky,
     }
 }
 
@@ -284,7 +279,7 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
                     let (pipeline, sbt) = build_pipeline_sbt(
                         &app.renderer.context,
                         &data.pipeline_layout,
-                        data.config.enable_skylight,
+                        data.enable_sky,
                     );
                     data.pipeline = pipeline;
                     data.sbt = sbt;

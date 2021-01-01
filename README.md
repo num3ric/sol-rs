@@ -10,11 +10,11 @@ However, this remains a personal sandbox for learning and experimentation so use
 ## Examples
 
 [![screenshot](https://i.imgur.com/kFc6nr3.png)](https://github.com/num3ric/sol-rs/blob/master/examples/5-pathtrace.rs)
-`cargo run --release --example 5-pathtrace assets/tunnel.json`
+`cargo run --release --example 5-pathtrace -- --model models/tunnel.gltf --sky`
 
 
 [![screenshot](https://i.imgur.com/uW3Tm4e.png)](https://github.com/num3ric/sol-rs/blob/master/examples/5-pathtrace.rs)
-`cargo run --release --example 5-pathtrace assets/cornell.json`
+`cargo run --release --example 5-pathtrace -- --model models/cornell.gltf`
 
 
 [![screenshot](https://i.imgur.com/yC1x7EZ.png)](https://github.com/num3ric/sol-rs/blob/master/examples/4-ray-ao.rs)

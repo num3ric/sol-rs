@@ -36,7 +36,7 @@ pub struct PerFrameData {
     pub desc_set: sol::DescriptorSet,
 }
 pub struct AppData {
-    pub models: Vec<scene::Model>,
+    pub scene: scene::Scene,
     pub pipeline: ray::Pipeline,
     pub layout_scene: sol::DescriptorSetLayout,
     pub layout_pass: sol::DescriptorSetLayout,
@@ -70,7 +70,7 @@ fn create_image_target(context: &Arc<sol::Context>, window: &sol::Window) -> sol
 
 pub fn setup(app: &mut sol::App) -> AppData {
     let context = &app.renderer.context;
-    let model = scene::load_model(
+    let scene = scene::load_scene(
         context.clone(),
         &sol::util::find_asset("models/Duck.gltf").unwrap(),
     );
@@ -148,7 +148,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
         per_frame.push(PerFrameData { ubo, desc_set });
     }
 
-    let scene_description = ray::SceneDescription::from_model(context.clone(), &model);
+    let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
     let mut sbt = ray::ShaderBindingTable::new(
         context.clone(),
@@ -162,7 +162,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     let image_target = create_image_target(&context, &app.window);
 
     AppData {
-        models: vec![model],
+        scene,
         pipeline,
         layout_scene,
         layout_pass,

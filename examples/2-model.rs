@@ -4,7 +4,7 @@ use sol::scene;
 
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
-pub struct Scene {
+pub struct SceneData {
     mvp: glam::Mat4,
     normal: glam::Mat4,
 }
@@ -15,7 +15,7 @@ pub struct PerFrameData {
 }
 
 pub struct AppData {
-    pub model: scene::Model,
+    pub scene: scene::Scene,
     pub pipeline: sol::Pipeline,
     pub desc_set_layout: sol::DescriptorSetLayout,
     pub pipeline_layout: sol::PipelineLayout,
@@ -25,7 +25,7 @@ pub struct AppData {
 
 pub fn setup(app: &mut sol::App) -> AppData {
     let context = &app.renderer.context;
-    let model = scene::load_model(
+    let scene = scene::load_scene(
         context.clone(),
         &sol::util::find_asset("models/Duck.gltf").unwrap(),
     );
@@ -56,9 +56,9 @@ pub fn setup(app: &mut sol::App) -> AppData {
     let mut camera = scene::Camera::new(app.window.get_size());
     camera.look_at(Vec3::splat(3.0), vec3(0.0, 0.5, 0.0), -Vec3::unit_y());
 
-    let scene = Scene {
-        mvp: camera.perspective_matrix() * camera.view_matrix() * model.transform,
-        normal: (camera.view_matrix() * model.transform)
+    let scene_data = SceneData {
+        mvp: camera.perspective_matrix() * camera.view_matrix() * scene.meshes[0].transform,
+        normal: (camera.view_matrix() * scene.meshes[0].transform)
             .inverse()
             .transpose(),
     };
@@ -70,14 +70,14 @@ pub fn setup(app: &mut sol::App) -> AppData {
             sol::BufferInfo::default()
                 .usage(vk::BufferUsageFlags::UNIFORM_BUFFER)
                 .cpu_to_gpu(),
-            &[scene],
+            &[scene_data],
         );
         let desc_set = desc_set_layout
             .get_or_create(sol::DescriptorSetInfo::default().buffer(0, ubo.get_descriptor_info()));
         per_frame.push(PerFrameData { ubo, desc_set });
     }
     AppData {
-        model,
+        scene,
         pipeline,
         desc_set_layout,
         pipeline_layout,
@@ -96,15 +96,16 @@ pub fn window_event(_: &mut sol::App, data: &mut AppData, event: &winit::event::
 pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRenderError> {
     let (image_aquired_semaphore, cmd) = app.renderer.begin_frame_default()?;
     let ref camera = data.manip.camera;
-    let scene = Scene {
-        mvp: camera.perspective_matrix() * camera.view_matrix() * data.model.transform,
-        normal: (camera.view_matrix() * data.model.transform)
+    //TODO: move mesh transform in push constant?
+    let scene_data = SceneData {
+        mvp: camera.perspective_matrix() * camera.view_matrix() * data.scene.meshes[0].transform,
+        normal: (camera.view_matrix() * data.scene.meshes[0].transform)
             .inverse()
             .transpose(),
     };
     data.per_frame[app.renderer.active_frame_index]
         .ubo
-        .update(&[scene]);
+        .update(&[scene_data]);
     let pipeline_layout = data.pipeline_layout.handle();
     let descriptor_set = data.per_frame[app.renderer.active_frame_index]
         .desc_set
@@ -123,7 +124,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             &[],
         );
     }
-    data.model.meshes.iter().for_each(|mesh| mesh.cmd_draw(cmd));
+    data.scene.meshes.iter().for_each(|mesh| mesh.cmd_draw(cmd));
     app.renderer.end_frame_default(image_aquired_semaphore, cmd)
 }
 

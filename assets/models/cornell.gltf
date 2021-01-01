@@ -15,7 +15,8 @@
                 4,
                 5,
                 6,
-                7
+                7,
+                8
             ]
         }
     ],
@@ -99,8 +100,27 @@
                 0,
                 0.7071067094802856
             ]
-        }
+        },
+        {
+			"matrix" : [
+				-1, 0, 0, 0,
+				0, -1, 0, 0,
+				0, 0, 1, 0,
+				0, 1, -4.1, 1 ],
+			"camera" : 0
+		}
     ],
+    "cameras": [
+		{
+			"type": "perspective",
+			"perspective": {
+				"aspectRatio": 1.7777778,
+				"yfov": 35.0,
+				"znear": 0.01,
+				"zfar": 100.0
+			}
+		}
+	],
     "materials" : [
         {
             "doubleSided" : true,

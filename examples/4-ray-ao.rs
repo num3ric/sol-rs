@@ -36,7 +36,7 @@ pub struct PerFrameData {
     pub desc_set: sol::DescriptorSet,
 }
 pub struct AppData {
-    pub model: scene::Model,
+    pub scene: scene::Scene,
     pub pipeline_layout: sol::PipelineLayout,
     pub layout_scene: sol::DescriptorSetLayout,
     pub layout_pass: sol::DescriptorSetLayout,
@@ -74,13 +74,16 @@ fn create_image_target(context: &Arc<sol::Context>, window: &sol::Window) -> sol
 
 pub fn setup(app: &mut sol::App) -> AppData {
     let context = &app.renderer.context;
-    let mut model = scene::load_model(
+    let mut scene = scene::load_scene(
         context.clone(),
         &sol::util::find_asset("models/ToyCar.glb").unwrap(),
     );
-    model.transform = glam::Mat4::from_scale(Vec3::splat(0.01))
-        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
-    let scene_description = ray::SceneDescription::from_model(context.clone(), &model);
+    // Override transforms...
+    for mesh in &mut scene.meshes {
+        mesh.transform = glam::Mat4::from_scale(Vec3::splat(0.01))
+            * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+    }
+    let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
     let mut camera = scene::Camera::new(app.window.get_size());
     camera.look_at(vec3(4.0, 1.0, 4.0), vec3(0.0, 0.5, 0.0), -Vec3::unit_y());
@@ -197,7 +200,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     );
 
     AppData {
-        model,
+        scene,
         pipeline_layout,
         layout_scene,
         layout_pass,
@@ -328,9 +331,7 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
-            device_extensions: vec![
-                ash::extensions::nv::RayTracing::name(),
-            ],
+            device_extensions: vec![ash::extensions::nv::RayTracing::name()],
             ..Default::default()
         },
     }

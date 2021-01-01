@@ -13,10 +13,6 @@ vk-mem = { git = "https://github.com/gwihlidal/vk-mem-rs", rev ="5395612757d7f3b
 shaderc = "0.6"
 glam = { version = "0.10.2", features = ["serde"] }
 gltf = "0.15.2"
-serde = { version = "1.0.117", features = ["derive"] }
-
-# serde_json is just for the example, not required in general
-serde_json = "1.0"
 
 # [profile.release]
 # debug = true

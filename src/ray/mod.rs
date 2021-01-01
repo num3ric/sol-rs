@@ -47,14 +47,13 @@ pub struct SceneDescription {
 }
 
 impl SceneDescription {
-    pub fn from_model(context: Arc<Context>, model: &crate::scene::Model) -> Self {
-        let meshes = model.meshes.iter().collect::<Vec<_>>();
-        Self::from_meshes(
-            context,
-            meshes,
-            vec![model.transform; model.meshes.len()],
-            Some(&model.material_buffer),
-        )
+    pub fn from_scene(context: Arc<Context>, scene: &crate::scene::Scene) -> Self {
+        let meshes = scene.meshes.iter().collect::<Vec<_>>();
+        let mut transforms = Vec::<glam::Mat4>::new();
+        meshes.iter().for_each(|mesh| {
+            transforms.push(mesh.transform);
+        });
+        Self::from_meshes(context, meshes, transforms, Some(&scene.material_buffer))
     }
 
     pub fn from_meshes(
@@ -118,9 +117,8 @@ impl SceneDescription {
                 instance_indices.push(instance.id as usize);
                 instances.push(instance);
 
-
                 // TODO: support multiple instances per BLAS (move out of primitive loop here)
-                
+
                 // Bottom-level acceleration structure
                 blas.push(BLAS::new(
                     context.clone(),

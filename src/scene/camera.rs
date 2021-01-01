@@ -14,7 +14,7 @@ enum Actions {
     Pan,
     LookAround,
 }
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct CameraInput {
     pub lmb: bool,
     pub mmb: bool,
@@ -30,15 +30,15 @@ impl CameraInput {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Camera {
     input: CameraInput,
     position: Vec3,
     center: Vec3,
     up: Vec3,
     vfov: f32,
-    near: f32,
-    far: f32,
+    z_near: f32,
+    z_far: f32,
     view_matrix: Mat4,
     persp_matrix: Mat4,
     mouse_pos: Vec2,
@@ -58,8 +58,8 @@ impl Camera {
             center: Vec3::zero(),
             up: -Vec3::unit_y(),
             vfov: 35.0,
-            near: 0.1,
-            far: 1000.0,
+            z_near: 0.1,
+            z_far: 1000.0,
             view_matrix: Mat4::identity(),
             persp_matrix: Mat4::identity(),
             mouse_pos: Vec2::zero(),
@@ -67,6 +67,25 @@ impl Camera {
             speed: 30.0,
         };
         camera.update_persp();
+        camera
+    }
+
+    pub fn from_view(view:glam::Mat4, yfov:f32, z_near:f32, z_far:f32) -> Self {
+        let position = view * vec4(0.0,0.0,0.0,1.0);
+        let camera = Camera {
+            input: CameraInput::default(),
+            position: position.into(),
+            center: Vec3::zero(),
+            up: -Vec3::unit_y(),
+            vfov: yfov,
+            z_near,
+            z_far,
+            view_matrix: view,
+            persp_matrix: Mat4::identity(),
+            mouse_pos: Vec2::zero(),
+            window_size: vec2(1920.0, 1080.0),
+            speed: 30.0,
+        };
         camera
     }
 }
@@ -79,7 +98,7 @@ impl Camera {
     fn update_persp(&mut self) {
         let aspect = self.window_size.x / self.window_size.y;
         self.persp_matrix =
-            Mat4::perspective_rh(self.vfov.to_radians(), aspect, self.near, self.far);
+            Mat4::perspective_rh(self.vfov.to_radians(), aspect, self.z_near, self.z_far);
     }
 
     pub fn look_at(&mut self, eye: Vec3, center: Vec3, up: Vec3) {
