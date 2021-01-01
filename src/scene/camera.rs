@@ -71,12 +71,16 @@ impl Camera {
     }
 
     pub fn from_view(view:glam::Mat4, yfov:f32, z_near:f32, z_far:f32) -> Self {
-        let position = view * vec4(0.0,0.0,0.0,1.0);
+        let view_inverse = view.inverse();
+        let position = view.inverse() * vec4(0.0,0.0,0.0,1.0);
+        let up = view_inverse * vec4(0.0,1.0,0.0,0.0);
+        let center = position + view_inverse * vec4(0.0,0.0,-4.0,0.0);
+        
         let camera = Camera {
             input: CameraInput::default(),
             position: position.into(),
-            center: Vec3::zero(),
-            up: -Vec3::unit_y(),
+            center: center.into(),
+            up: up.into(),
             vfov: yfov,
             z_near,
             z_far,
