@@ -46,6 +46,9 @@ vec2 nextRand2(inout uint rng)
     return vec2(nextRand(rng), nextRand(rng));
 }
 
+// Sampling functions taken from metal-ray-tracer
+// Refer to: https://github.com/sergeyreznik/metal-ray-tracer/blob/part-5/source/Shaders/raytracing.h
+
 float fresnelDielectric(vec3 i, vec3 m, float eta)
 {
     float result = 1.0f;
