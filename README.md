@@ -7,6 +7,8 @@ However, this remains a personal sandbox for learning and experimentation so use
 ## Requirements
 [LunarG Vulkan SDK](https://lunarg.com/vulkan-sdk/) installation.
 
+On Windows, additional installations such as [Ninja](https://ninja-build.org/) may be required due to current shaderc dependency. Please refer to the following [instructions](https://github.com/google/shaderc-rs/blob/master/README.md) if you run into shaderc-rs issues.
+
 ## Examples
 
 [![screenshot](https://i.imgur.com/kFc6nr3.png)](https://github.com/num3ric/sol-rs/blob/master/examples/5-pathtrace.rs)
