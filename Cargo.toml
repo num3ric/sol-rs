@@ -10,7 +10,7 @@ image = "0.23.12"
 ash = "0.31.0"
 ash-window = "0.5.0"
 vk-mem = { git = "https://github.com/gwihlidal/vk-mem-rs", rev ="5395612757d7f3b785f7607f955b19a51cf4dfb9" }
-shaderc = "0.6"
+shaderc = "0.7"
 glam = { version = "0.10.2", features = ["serde"] }
 gltf = "0.15.2"
 
