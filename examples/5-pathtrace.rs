@@ -307,16 +307,14 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     let cmd = app.renderer.begin_command_buffer();
     let device = app.renderer.context.device();
 
-    if data.accumulation_start_frame == app.elapsed_ticks as u32 {
-        unsafe {
-            device.cmd_push_constants(
-                cmd,
-                data.pipeline_layout.handle(),
-                vk::ShaderStageFlags::RAYGEN_NV,
-                0,
-                &data.accumulation_start_frame.to_ne_bytes(),
-            )
-        }
+    unsafe {
+        device.cmd_push_constants(
+            cmd,
+            data.pipeline_layout.handle(),
+            vk::ShaderStageFlags::RAYGEN_NV,
+            0,
+            &data.accumulation_start_frame.to_ne_bytes(),
+        )
     }
 
     data.scene_description.tlas_regenerate(cmd);
