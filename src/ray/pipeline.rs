@@ -1,5 +1,5 @@
 use crate::{pipeline::Shader, Context, Resource};
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::{ffi::CString, path::PathBuf, sync::Arc};
 
 pub struct PipelineInfo {

@@ -1,6 +1,5 @@
 use crate::{Buffer, BufferInfo, Context, Resource, SharedContext};
-pub use ash::version::DeviceV1_0;
-use ash::{version::InstanceV1_0, vk};
+use ash::{vk};
 use image::GenericImageView;
 use std::{cmp::max, sync::Arc};
 use std::{path::PathBuf, ptr};
@@ -456,7 +455,7 @@ impl Drop for Image2d {
 
             match self.allocation {
                 Some(alloc) => {
-                    self.context.allocator().destroy_image(self.image, &alloc);
+                    self.context.allocator().destroy_image(self.image, alloc);
                 }
                 None => {}
             }

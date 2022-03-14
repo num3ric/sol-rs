@@ -1,5 +1,5 @@
 use crate::{Context, RenderPass, Resource, TransientRenderPassInfo, Vertex};
-use ash::{version::DeviceV1_0, vk};
+use ash::vk;
 use shaderc::{CompileOptions, Compiler, IncludeType, ResolvedInclude, ShaderKind};
 use std::ffi::CString;
 use std::fs;
@@ -414,7 +414,7 @@ impl Pipeline {
             src_alpha_blend_factor: vk::BlendFactor::ZERO,
             dst_alpha_blend_factor: vk::BlendFactor::ZERO,
             alpha_blend_op: vk::BlendOp::ADD,
-            color_write_mask: vk::ColorComponentFlags::all(),
+            color_write_mask: vk::ColorComponentFlags::RGBA,
         }];
         let color_blend_state = vk::PipelineColorBlendStateCreateInfo::builder()
             .logic_op(vk::LogicOp::CLEAR)

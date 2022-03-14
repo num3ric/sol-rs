@@ -1,5 +1,5 @@
 use crate::Context;
-use ash::{util::Align, version::DeviceV1_0, vk};
+use ash::{util::Align, vk};
 use std::sync::Arc;
 use std::{ffi::c_void, mem::align_of, slice::from_raw_parts_mut};
 
@@ -125,10 +125,12 @@ impl Buffer {
             }
             None => {}
         }
-        let (buffer, allocation, allocation_info) = context
-            .allocator()
-            .create_buffer(&buffer_info, &create_info)
-            .unwrap();
+        let (buffer, allocation, allocation_info) = unsafe {
+            context
+                .allocator()
+                .create_buffer(&buffer_info, &create_info)
+                .unwrap()
+        };
         Buffer {
             context: context.clone(),
             handle: buffer,
@@ -157,10 +159,12 @@ impl Buffer {
         allocation_info.usage = info.mem_usage;
         //allocation_info.flags = vk_mem::AllocationCreateFlags::MAPPED;
 
-        let (buffer, allocation, allocation_info) = context
-            .allocator()
-            .create_buffer(&create_info, &allocation_info)
-            .unwrap();
+        let (buffer, allocation, allocation_info) = unsafe {
+            context
+                .allocator()
+                .create_buffer(&create_info, &allocation_info)
+                .unwrap()
+        };
         assert_eq!(allocation_info.get_mapped_data(), std::ptr::null_mut());
 
         let result = Buffer {
@@ -180,11 +184,12 @@ impl Buffer {
                 let mut staging_alloc_info = vk_mem::AllocationCreateInfo::default();
                 staging_alloc_info.usage = vk_mem::MemoryUsage::CpuOnly;
                 staging_alloc_info.flags = vk_mem::AllocationCreateFlags::MAPPED;
-                let (staging, staging_alloc, staging_alloc_info) = context
-                    .allocator()
-                    .create_buffer(&staging_info, &staging_alloc_info)
-                    .unwrap();
-
+                let (staging, staging_alloc, staging_alloc_info) = unsafe {
+                    context
+                        .allocator()
+                        .create_buffer(&staging_info, &staging_alloc_info)
+                        .unwrap()
+                };
                 let mem_ptr = staging_alloc_info.get_mapped_data();
                 unsafe {
                     let mapped_slice = from_raw_parts_mut(mem_ptr as *mut T, data.len());
@@ -200,7 +205,9 @@ impl Buffer {
                 }
                 context.end_single_time_cmd(cmd);
 
-                context.allocator().destroy_buffer(staging, &staging_alloc);
+                unsafe {
+                    context.allocator().destroy_buffer(staging, staging_alloc);
+                }
             }
             _ => {
                 result.update(data);
@@ -211,12 +218,12 @@ impl Buffer {
 
     pub fn update<T: Copy>(&self, data: &[T]) {
         let size = std::mem::size_of_val(&data[0]) * data.len();
-        let mapped_data = self
-            .context
-            .allocator()
-            .map_memory(&self.allocation)
-            .unwrap();
         unsafe {
+            let mapped_data = self
+                .context
+                .allocator()
+                .map_memory(self.allocation)
+                .unwrap();
             let mut mapped_slice = Align::new(
                 mapped_data as *mut c_void,
                 align_of::<T>() as u64,
@@ -224,19 +231,23 @@ impl Buffer {
             );
             mapped_slice.copy_from_slice(data);
             //mapped_data.copy_from(data.as_ptr() as *const u8, size);
+            self.context.allocator().unmap_memory(self.allocation);
         }
-        self.context.allocator().unmap_memory(&self.allocation);
     }
 
     pub fn map(&self) -> *mut u8 {
-        self.context
-            .allocator()
-            .map_memory(&self.allocation)
-            .unwrap()
+        unsafe {
+            self.context
+                .allocator()
+                .map_memory(self.allocation)
+                .unwrap()
+        }
     }
 
     pub fn unmap(&self) {
-        self.context.allocator().unmap_memory(&self.allocation);
+        unsafe {
+            self.context.allocator().unmap_memory(self.allocation);
+        }
     }
 
     pub fn get_descriptor_info(&self) -> vk::DescriptorBufferInfo {
@@ -284,8 +295,10 @@ impl crate::Resource<vk::Buffer> for Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
-        self.context
-            .allocator()
-            .destroy_buffer(self.handle, &self.allocation);
+        unsafe {
+            self.context
+                .allocator()
+                .destroy_buffer(self.handle, self.allocation);
+        }
     }
 }

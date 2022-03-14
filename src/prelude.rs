@@ -1,5 +1,5 @@
 pub use crate::{
-    ash::{version::DeviceV1_0, vk},
+    ash::{vk},
     glam::*,
     winit, Resource, Vertex,
 };

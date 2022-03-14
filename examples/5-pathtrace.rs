@@ -20,7 +20,7 @@ impl SceneUniforms {
     pub fn from(camera: &scene::Camera, frame: [u32; 3]) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::identity(),
+            model: glam::Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),

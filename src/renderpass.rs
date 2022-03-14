@@ -1,5 +1,5 @@
 use crate::{Image2d, Resource, SharedContext};
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::sync::Arc;
 
 #[derive(Default)]

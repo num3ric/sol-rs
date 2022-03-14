@@ -94,7 +94,7 @@ impl SceneDescription {
                     index_buffer,
                     index_count,
                     index_offset,
-                    transform: glam::Mat4::identity(), //TODO: Does this work??
+                    transform: glam::Mat4::IDENTITY, //TODO: Does this work??
                 });
 
                 vertex_descriptors.push(primitive.get_vertex_descriptor(&mesh.vertex_buffer));

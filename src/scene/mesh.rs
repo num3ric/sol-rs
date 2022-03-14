@@ -1,6 +1,6 @@
 use super::PrimitiveSection;
 use crate::{offset_of, Buffer, Context, Resource, Vertex};
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::sync::Arc;
 
 //TODO: solve non-vec4-aligned issues..
@@ -18,8 +18,8 @@ impl std::default::Default for ModelVertex {
         ModelVertex {
             pos: glam::vec4(0f32, 0.0, 0.0, 1.0),
             color: glam::Vec4::splat(1.0),
-            normal: glam::Vec4::zero(),
-            uv: glam::Vec4::zero(),
+            normal: glam::Vec4::ZERO,
+            uv: glam::Vec4::ZERO,
         }
     }
 }

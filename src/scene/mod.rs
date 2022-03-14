@@ -118,7 +118,7 @@ fn find_mesh(node: &gltf::Node, transforms: &mut Vec<glam::Mat4>, mesh_index: us
 }
 
 fn calc_mesh_global_transform(gltf: &gltf::Document, mesh_index: usize) -> glam::Mat4 {
-    let mut global_transform = glam::Mat4::identity();
+    let mut global_transform = glam::Mat4::IDENTITY;
     let mut transforms = Vec::<glam::Mat4>::new();
     for node in gltf.nodes() {
         if find_mesh(&node, &mut transforms, mesh_index) {
@@ -140,13 +140,13 @@ pub fn load_scene(context: Arc<Context>, filepath: &PathBuf) -> Scene {
     let mut materials = Vec::<MaterialInfo>::new();
     for mat in gltf.materials() {
         materials.push(MaterialInfo {
-            base_color: glam::Vec4::from_slice_unaligned(
+            base_color: glam::Vec4::from_slice(
                 &mat.pbr_metallic_roughness().base_color_factor(),
             ),
             //double_sided: mat.double_sided(),
             metallic_factor: mat.pbr_metallic_roughness().metallic_factor(),
             roughness_factor: mat.pbr_metallic_roughness().roughness_factor(),
-            emissive_factor: glam::Vec3::from_slice_unaligned(&mat.emissive_factor()),
+            emissive_factor: glam::Vec3::from_slice(&mat.emissive_factor()),
             ..Default::default()
         });
     }

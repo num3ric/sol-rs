@@ -1,5 +1,5 @@
 use crate::*;
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::sync::Arc;
 use std::{ffi::CStr, mem::ManuallyDrop};
 
@@ -34,7 +34,7 @@ impl std::default::Default for RendererSettings {
         RendererSettings {
             samples: 1,
             depth: true,
-            clear_color: glam::Vec4::zero(),
+            clear_color: glam::Vec4::ZERO,
             present_mode: vk::PresentModeKHR::FIFO,
             //frames_in_flight: 2,
             extensions: Vec::new(),

@@ -1,5 +1,5 @@
 use crate::{Buffer, BufferInfo, Context, Resource};
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::sync::Arc;
 
 pub struct GeometryInstance {
@@ -35,7 +35,7 @@ impl AccelerationStructure {
         unsafe {
             let info = vk::AccelerationStructureMemoryRequirementsInfoNV::builder()
                 .acceleration_structure(acceleration_structure)
-                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::OBJECT_NV);
+                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::OBJECT);
             let mem_reqs = context
                 .ray_tracing()
                 .get_acceleration_structure_memory_requirements(&info)
@@ -47,7 +47,7 @@ impl AccelerationStructure {
 
             let info = vk::AccelerationStructureMemoryRequirementsInfoNV::builder()
                 .acceleration_structure(acceleration_structure)
-                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::BUILD_SCRATCH_NV);
+                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::BUILD_SCRATCH);
             let mem_reqs = context
                 .ray_tracing()
                 .get_acceleration_structure_memory_requirements(&info)
@@ -56,7 +56,7 @@ impl AccelerationStructure {
 
             let info = vk::AccelerationStructureMemoryRequirementsInfoNV::builder()
                 .acceleration_structure(acceleration_structure)
-                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::UPDATE_SCRATCH_NV);
+                .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::UPDATE_SCRATCH);
             let scratch_update_size = context
                 .ray_tracing()
                 .get_acceleration_structure_memory_requirements(&info)

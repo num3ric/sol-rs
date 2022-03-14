@@ -3,7 +3,7 @@ use crate::{
     TransientRenderPassInfo, Window,
 };
 use ash::vk;
-use ash::{extensions::khr, version::DeviceV1_0};
+use ash::{extensions::khr};
 use std::sync::Arc;
 
 pub struct Swapchain {

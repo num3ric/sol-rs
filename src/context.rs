@@ -1,9 +1,9 @@
 use crate::*;
 use ash::{
     extensions::{ext::DebugUtils, khr::Surface, nv::RayTracing},
-    version::{DeviceV1_0, EntryV1_0, InstanceV1_0},
     vk, Device, Entry, Instance,
 };
+use vk_mem::AllocatorCreateFlags;
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use std::sync::Arc;
@@ -162,7 +162,7 @@ pub struct SharedContext {
 impl SharedContext {
     pub fn new(window: &mut Window, settings: &RendererSettings) -> Self {
         unsafe {
-            let entry = Entry::new().unwrap();
+            let entry = Entry::load().unwrap();
             let app_name = CString::new("VulkanTriangle").unwrap();
 
             let mut layer_names = Vec::<CString>::new();
@@ -207,7 +207,7 @@ impl SharedContext {
                     vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
                         | vk::DebugUtilsMessageSeverityFlagsEXT::WARNING, //| vk::DebugUtilsMessageSeverityFlagsEXT::INFO,
                 )
-                .message_type(vk::DebugUtilsMessageTypeFlagsEXT::all())
+                .message_type(vk::DebugUtilsMessageTypeFlagsEXT::GENERAL)
                 .pfn_user_callback(Some(vulkan_debug_callback));
             let debug_utils_loader = DebugUtils::new(&entry, &instance);
             let debug_call_back = debug_utils_loader
@@ -266,7 +266,12 @@ impl SharedContext {
                 physical_device: pdevice,
                 device: device.clone(),
                 instance: instance.clone(),
-                ..Default::default()
+                flags: AllocatorCreateFlags::default(),
+                preferred_large_heap_block_size: 0,
+                frame_in_use_count: 0,
+                heap_size_limits: None,
+                allocation_callbacks: None,
+                vulkan_api_version: 0,
             };
             let allocator = vk_mem::Allocator::new(&alloc_create_info).unwrap();
             let ray_tracing = RayTracing::new(&instance, &device);
@@ -338,8 +343,8 @@ impl SharedContext {
 
 impl Drop for SharedContext {
     fn drop(&mut self) {
-        self.allocator.destroy();
         unsafe {
+            self.allocator.destroy();
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);
             self.device.destroy_device(None);

@@ -1,5 +1,5 @@
 use crate::{Resource, SharedContext};
-use ash::{version::DeviceV1_0, vk};
+use ash::{vk};
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
