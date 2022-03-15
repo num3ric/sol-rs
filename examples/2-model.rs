@@ -54,7 +54,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     );
 
     let mut camera = scene::Camera::new(app.window.get_size());
-    camera.look_at(Vec3::splat(3.0), vec3(0.0, 0.5, 0.0), -Vec3::unit_y());
+    camera.look_at(Vec3::splat(3.0), vec3(0.0, 0.5, 0.0), -Vec3::Y);
 
     let scene_data = SceneData {
         mvp: camera.perspective_matrix() * camera.view_matrix() * scene.meshes[0].transform,

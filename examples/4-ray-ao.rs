@@ -20,7 +20,7 @@ impl SceneUniforms {
     pub fn from(camera: &scene::Camera, frame: [u32; 3]) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::identity(),
+            model: glam::Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),
@@ -86,7 +86,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
     let mut camera = scene::Camera::new(app.window.get_size());
-    camera.look_at(vec3(4.0, 1.0, 4.0), vec3(0.0, 0.5, 0.0), -Vec3::unit_y());
+    camera.look_at(vec3(4.0, 1.0, 4.0), vec3(0.0, 0.5, 0.0), -Vec3::Y);
 
     let mut per_frame = Vec::<PerFrameData>::new();
 
