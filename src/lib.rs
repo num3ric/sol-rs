@@ -187,6 +187,7 @@ fn main_loop<T: 'static>(builder: AppBuilder<T>) {
             
             if dirty_swapchain {
                 app.recreate_swapchain();
+                dirty_swapchain = false;
             }
 
             match event {

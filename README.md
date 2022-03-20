@@ -7,7 +7,7 @@ However, this remains a personal sandbox for learning and experimentation so use
 ## Requirements
 [LunarG Vulkan SDK](https://lunarg.com/vulkan-sdk/) installation.
 
-On Windows, setting a `VULKAN_SDK` environment variable to the 1.2.162.0 SDK installation folder should prevent the need for building shaderc from source. Otherwise, additional installations such as [Ninja](https://ninja-build.org/) may be required. Please refer to the following [instructions](https://github.com/google/shaderc-rs/blob/master/README.md) if you run into shaderc-related issues.
+On Windows, setting a `VULKAN_SDK` environment variable to the 1.3.204.1 SDK installation folder should prevent the need for building shaderc from source. Otherwise, additional installations such as [Ninja](https://ninja-build.org/) may be required. Please refer to the following [instructions](https://github.com/google/shaderc-rs/blob/master/README.md) if you run into shaderc-related issues.
 
 ## Examples
 
