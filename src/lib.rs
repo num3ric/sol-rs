@@ -194,10 +194,6 @@ fn main_loop<T: 'static>(builder: AppBuilder<T>) {
                 Event::WindowEvent { event, .. } => {
                     match event {
                         WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
-                            println!("Window was resized to: {:?}x{:?}", width, height);
-                            dirty_swapchain = true;
-                        }
                         WindowEvent::KeyboardInput { input, .. } => {
                             if input.state == ElementState::Pressed {
                                 if input.virtual_keycode == Some(VirtualKeyCode::Q)
