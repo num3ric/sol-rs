@@ -261,6 +261,8 @@ impl Drop for Swapchain {
     fn drop(&mut self) {
         unsafe {
             self.present_images.clear();
+            self.depth_stencil_images.clear();
+            self.resolve_images.clear();
             // Since images are created by the swapchain, this automatically destroys them as well.
             self.swapchain_loader
                 .destroy_swapchain(self.swapchain, None);

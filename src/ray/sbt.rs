@@ -118,7 +118,6 @@ impl ShaderBindingTable {
             dst_offset,
             dst_data,
         );
-        sbt.unmap();
         self.buffer = Some(sbt);
     }
 

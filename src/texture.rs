@@ -3,6 +3,7 @@ use ash::{vk};
 use image::GenericImageView;
 use std::{cmp::max, sync::Arc};
 use std::{path::PathBuf, ptr};
+use gpu_allocator::{MemoryLocation, vulkan::{Allocation, AllocationCreateDesc}};
 
 //TODO: image resource trait
 
@@ -29,7 +30,7 @@ pub struct Image2d {
     view: vk::ImageView,
     layout: vk::ImageLayout,
     format: vk::Format,
-    allocation: Option<vk_mem::Allocation>,
+    allocation: Option<Allocation>,
 }
 
 impl Image2d {
@@ -42,11 +43,23 @@ impl Image2d {
         unsafe {
             assert!(image_info.extent.width + image_info.extent.height > 2);
 
-            let mut allocation_info = vk_mem::AllocationCreateInfo::default();
-            allocation_info.usage = vk_mem::MemoryUsage::GpuOnly;
-            let (image, alloc, _) = context
-                .allocator()
-                .create_image(&image_info, &allocation_info)
+            // Create image
+            let image = context.device().create_image(&image_info, None).unwrap();
+
+            // Allocate and bind memory to image
+            let requirements = context.device().get_image_memory_requirements(image);
+            let alloc = context.allocator()
+                .lock()
+                .unwrap()
+                .allocate(&AllocationCreateDesc {
+                    name: "Image2D",
+                    requirements,
+                    location: MemoryLocation::GpuOnly,
+                    linear: false,
+                })
+                .unwrap();
+            
+            context.device().bind_image_memory(image, alloc.memory(), alloc.offset())
                 .unwrap();
 
             let subresource_range = vk::ImageSubresourceRange::builder()
@@ -452,12 +465,14 @@ impl Drop for Image2d {
     fn drop(&mut self) {
         unsafe {
             self.context.device().destroy_image_view(self.view, None);
-
-            match self.allocation {
-                Some(alloc) => {
-                    self.context.allocator().destroy_image(self.image, alloc);
-                }
-                None => {}
+            self.context.device().destroy_image(self.image, None);
+            
+            if self.allocation.is_some() {
+                let to_drop = std::mem::replace(&mut self.allocation, None).unwrap();
+                self.context.allocator()
+                    .lock()
+                    .unwrap()
+                    .free(to_drop).unwrap();
             }
         }
     }
@@ -509,7 +524,7 @@ impl Texture2d {
                 context.clone(),
                 BufferInfo::default()
                     .usage(vk::BufferUsageFlags::TRANSFER_SRC)
-                    .cpu_only(),
+                    .cpu_to_gpu(),
                 &image_data,
             );
             let cmd = context.begin_single_time_cmd();

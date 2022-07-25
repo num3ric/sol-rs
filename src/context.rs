@@ -3,10 +3,10 @@ use ash::{
     extensions::{ext::DebugUtils, khr::Surface, nv::RayTracing},
     vk, Device, Entry, Instance,
 };
-use vk_mem::AllocatorCreateFlags;
+use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 unsafe extern "system" fn vulkan_debug_callback(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -152,7 +152,7 @@ pub struct SharedContext {
     debug_call_back: vk::DebugUtilsMessengerEXT,
     device: Device,
     pdevice: vk::PhysicalDevice,
-    allocator: vk_mem::Allocator,
+    allocator: Arc<Mutex<Allocator>>,
     pub queue_family_indices: QueueFamiliesIndices,
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
@@ -262,18 +262,14 @@ impl SharedContext {
                 &settings.device_extensions,
             );
 
-            let alloc_create_info = vk_mem::AllocatorCreateInfo {
-                physical_device: pdevice,
-                device: device.clone(),
+            let allocator = Allocator::new(&AllocatorCreateDesc{
                 instance: instance.clone(),
-                flags: AllocatorCreateFlags::default(),
-                preferred_large_heap_block_size: 0,
-                frame_in_use_count: 0,
-                heap_size_limits: None,
-                allocation_callbacks: None,
-                vulkan_api_version: 0,
-            };
-            let allocator = vk_mem::Allocator::new(&alloc_create_info).unwrap();
+                device: device.clone(),
+                physical_device: pdevice,
+                debug_settings: Default::default(),
+                buffer_device_address: true,  // TODO: check the BufferDeviceAddressFeatures struct.
+            }).unwrap();
+
             let ray_tracing = RayTracing::new(&instance, &device);
 
             SharedContext {
@@ -283,7 +279,7 @@ impl SharedContext {
                 debug_call_back,
                 device,
                 pdevice,
-                allocator,
+                allocator: Arc::new(Mutex::new(allocator)),
                 queue_family_indices,
                 graphics_queue,
                 present_queue,
@@ -324,7 +320,7 @@ impl SharedContext {
         self.present_queue
     }
 
-    pub fn allocator(&self) -> &vk_mem::Allocator {
+    pub fn allocator(&self) -> &Arc<Mutex<Allocator>> {
         &self.allocator
     }
 
@@ -343,8 +339,8 @@ impl SharedContext {
 
 impl Drop for SharedContext {
     fn drop(&mut self) {
+        drop(self.allocator.as_ref()); // Explicitly drop before destruction of device and instance.
         unsafe {
-            self.allocator.destroy();
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);
             self.device.destroy_device(None);
@@ -415,7 +411,7 @@ impl Context {
         self.shared_context.graphics_queue()
     }
 
-    pub fn allocator(&self) -> &vk_mem::Allocator {
+    pub fn allocator(&self) -> &Arc<Mutex<Allocator>> {
         self.shared_context.allocator()
     }
 

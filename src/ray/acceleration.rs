@@ -187,8 +187,8 @@ impl BLAS {
             // Bind the acceleration structure descriptor to the actual memory that will store the AS itself
             let bind_info = vk::BindAccelerationStructureMemoryInfoNV::builder()
                 .acceleration_structure(accel_struct)
-                .memory(buffer.get_alloc_info().get_device_memory())
-                .memory_offset(buffer.get_alloc_info().get_offset() as u64)
+                .memory(buffer.get_alloc().memory())
+                .memory_offset(buffer.get_alloc().offset() as u64)
                 .build();
             context
                 .ray_tracing()
@@ -470,10 +470,10 @@ impl TLAS {
                     .memory(
                         self.accel_struct
                             .buffer
-                            .get_alloc_info()
-                            .get_device_memory(),
+                            .get_alloc()
+                            .memory(),
                     )
-                    .memory_offset(self.accel_struct.buffer.get_alloc_info().get_offset() as u64)
+                    .memory_offset(self.accel_struct.buffer.get_alloc().offset() as u64)
                     .build();
                 self.context
                     .ray_tracing()
