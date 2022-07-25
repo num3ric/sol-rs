@@ -102,14 +102,14 @@ fn build_pipeline_sbt(
             .specialization(&[enable_sky as u32], 0)
             .name("AO_mat".to_string()),
     );
-    let mut sbt = ray::ShaderBindingTable::new(
+    let sbt = ray::ShaderBindingTable::new(
         context.clone(),
+        pipeline.handle(),
         ray::ShaderBindingTableInfo::default()
             .raygen(0)
             .miss(1)
             .hitgroup(2),
     );
-    sbt.generate(pipeline.handle());
 
     (pipeline, sbt)
 }

@@ -119,6 +119,7 @@ impl Buffer {
         let mut create_info = vk_mem::AllocationCreateInfo::default();
         create_info.memory_type_bits = info.memory_type_bits;
         create_info.usage = info.mem_usage;
+
         match info.flags {
             Some(flags) => {
                 create_info.flags = flags;
@@ -284,6 +285,14 @@ impl Buffer {
 
     pub fn get_alloc_info(&self) -> &vk_mem::AllocationInfo {
         &self.allocation_info
+    }
+
+    pub fn get_device_address(&self) -> u64 {
+        unsafe {
+            self.context.device().get_buffer_device_address(
+                &vk::BufferDeviceAddressInfo::builder().buffer(self.handle),
+            )
+        }
     }
 }
 

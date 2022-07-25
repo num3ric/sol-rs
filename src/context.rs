@@ -6,6 +6,10 @@ use ash::{
 use vk_mem::AllocatorCreateFlags;
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
+use std::{
+    collections::{HashSet},
+    os::raw::c_char
+};
 use std::sync::Arc;
 
 unsafe extern "system" fn vulkan_debug_callback(
@@ -108,6 +112,21 @@ fn create_logical_device_with_graphics_queue(
             .collect::<Vec<_>>()
     };
 
+    let supported_extensions: HashSet<String> = unsafe {
+        let extension_properties = instance
+            .enumerate_device_extension_properties(device).unwrap();
+        dbg!("Extension properties:\n{:#?}", &extension_properties);
+        extension_properties
+            .iter()
+            .map(|ext| {
+                std::ffi::CStr::from_ptr(ext.extension_name.as_ptr() as *const c_char)
+                    .to_string_lossy()
+                    .as_ref()
+                    .to_owned()
+            })
+            .collect()
+    };
+
     let mut device_extensions_ptrs = vec![ash::extensions::khr::Swapchain::name().as_ptr()];
     for ext in device_extensions {
         device_extensions_ptrs.push((*ext).as_ptr());
@@ -193,7 +212,7 @@ impl SharedContext {
                 .application_version(0)
                 .engine_name(&app_name)
                 .engine_version(0)
-                .api_version(vk::API_VERSION_1_3);
+                .api_version(vk::API_VERSION_1_2);
 
             let create_info = vk::InstanceCreateInfo::builder()
                 .application_info(&appinfo)
@@ -273,7 +292,7 @@ impl SharedContext {
                 frame_in_use_count: 0,
                 heap_size_limits: None,
                 allocation_callbacks: None,
-                vulkan_api_version: 0,
+                vulkan_api_version: 0, //TODO: fix me crash in library
             };
             let allocator = vk_mem::Allocator::new(&alloc_create_info).unwrap();
 

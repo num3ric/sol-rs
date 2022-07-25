@@ -150,14 +150,14 @@ pub fn setup(app: &mut sol::App) -> AppData {
 
     let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
-    let mut sbt = ray::ShaderBindingTable::new(
+    let sbt = ray::ShaderBindingTable::new(
         context.clone(),
+        pipeline.handle(),
         ray::ShaderBindingTableInfo::default()
             .raygen(0)
             .miss(1)
             .hitgroup(2),
     );
-    sbt.generate(pipeline.handle());
 
     let image_target = create_image_target(&context, &app.window);
 
@@ -260,6 +260,15 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
+            device_extensions: vec![
+                vk::KhrGetMemoryRequirements2Fn::name(),
+                vk::KhrVulkanMemoryModelFn::name(),
+                vk::KhrPipelineLibraryFn::name(),
+                vk::KhrDeferredHostOperationsFn::name(),
+                vk::KhrBufferDeviceAddressFn::name(),
+                vk::KhrAccelerationStructureFn::name(),
+                vk::KhrRayTracingPipelineFn::name(),
+            ],
             ..Default::default()
         },
     }

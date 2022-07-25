@@ -118,6 +118,8 @@ impl Shader {
         let mut compiler = Compiler::new().unwrap();
         let mut options = CompileOptions::new().unwrap();
         options.set_generate_debug_info();
+        options.set_target_spirv(shaderc::SpirvVersion::V1_4);
+        options.set_target_env(shaderc::TargetEnv::Vulkan, shaderc::EnvVersion::Vulkan1_2 as u32);
         let origin_path = path.clone();
         options.set_include_callback(
             move |requested_source, include_type, origin_source, recursion_depth| {

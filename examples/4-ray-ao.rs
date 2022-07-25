@@ -184,14 +184,14 @@ pub fn setup(app: &mut sol::App) -> AppData {
         per_frame.push(PerFrameData { ubo, desc_set });
     }
 
-    let mut sbt = ray::ShaderBindingTable::new(
+    let sbt = ray::ShaderBindingTable::new(
         context.clone(),
+        pipeline.handle(),
         ray::ShaderBindingTableInfo::default()
             .raygen(0)
             .miss(1)
             .hitgroup(2),
     );
-    sbt.generate(pipeline.handle());
 
     let render_target = create_image_target(&context, &app.window);
     let tex_blue_noise = sol::Texture2d::new(
