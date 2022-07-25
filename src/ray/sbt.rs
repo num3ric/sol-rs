@@ -71,17 +71,22 @@ impl ShaderBindingTable {
         // Clear/reset buffer
         self.buffer = None;
 
-        let group_count = self.get_total_group_count() as u64;
-        let sbt_size = self.handle_size_aligned * group_count;
+        let group_count = self.get_total_group_count() as usize;
+        let shader_group_handle_size = unsafe {
+            self.context.ray_tracing_properties().shader_group_handle_size as usize  
+        };
+        let group_handles_size = (shader_group_handle_size * group_count) as usize;
+        
+        let sbt_size = self.handle_size_aligned * group_count as u32;
         let sbt = Buffer::new(
             self.context.clone(),
             BufferInfo::default().cpu_to_gpu().usage(
-                vk::BufferUsageFlags::TRANSFER_SRC,
-                // | vk::BufferUsageFlags::RAY_TRACING_NV,
-                // | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                vk::BufferUsageFlags::TRANSFER_SRC
+                | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                | vk::BufferUsageFlags::SHADER_BINDING_TABLE_KHR
             ),
             sbt_size,
-            group_count as u32,
+            group_count as _,
         );
         let mut src_data = vec![0u8; sbt_size as usize];
         unsafe {
@@ -90,8 +95,8 @@ impl ShaderBindingTable {
                 .get_ray_tracing_shader_group_handles(
                     pipeline,
                     0,
-                    group_count as u32,
-                    &mut src_data,
+                    group_count as _,
+                    group_handles_size,
                 )
                 .unwrap();
         }

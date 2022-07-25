@@ -56,15 +56,15 @@ fn get_shaderc_stage(stage: &vk::ShaderStageFlags) -> Option<ShaderKind> {
         return Some(ShaderKind::TessEvaluation);
     } else if *stage == vk::ShaderStageFlags::GEOMETRY {
         return Some(ShaderKind::Geometry);
-    } else if *stage == vk::ShaderStageFlags::RAYGEN_NV {
+    } else if *stage == vk::ShaderStageFlags::RAYGEN_KHR {
         return Some(ShaderKind::RayGeneration);
-    } else if *stage == vk::ShaderStageFlags::ANY_HIT_NV {
+    } else if *stage == vk::ShaderStageFlags::ANY_HIT_KHR {
         return Some(ShaderKind::AnyHit);
-    } else if *stage == vk::ShaderStageFlags::CLOSEST_HIT_NV {
+    } else if *stage == vk::ShaderStageFlags::CLOSEST_HIT_KHR {
         return Some(ShaderKind::ClosestHit);
-    } else if *stage == vk::ShaderStageFlags::MISS_NV {
+    } else if *stage == vk::ShaderStageFlags::MISS_KHR {
         return Some(ShaderKind::Miss);
-    } else if *stage == vk::ShaderStageFlags::INTERSECTION_NV {
+    } else if *stage == vk::ShaderStageFlags::INTERSECTION_KHR {
         return Some(ShaderKind::Intersection);
     }
     None

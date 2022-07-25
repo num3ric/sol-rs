@@ -79,32 +79,38 @@ impl Pipeline {
             }
             shaders.push(shader);
 
-            let mut group = vk::RayTracingShaderGroupCreateInfoNV::builder()
-                .general_shader(vk::SHADER_UNUSED_NV)
-                .closest_hit_shader(vk::SHADER_UNUSED_NV)
-                .any_hit_shader(vk::SHADER_UNUSED_NV)
-                .intersection_shader(vk::SHADER_UNUSED_NV)
+            let mut group = vk::RayTracingShaderGroupCreateInfoKHR::builder()
+                .general_shader(vk::SHADER_UNUSED_KHR)
+                .closest_hit_shader(vk::SHADER_UNUSED_KHR)
+                .any_hit_shader(vk::SHADER_UNUSED_KHR)
+                .intersection_shader(vk::SHADER_UNUSED_KHR)
                 .build();
-            if shader_info.1 == vk::ShaderStageFlags::CLOSEST_HIT_NV {
-                group.ty = vk::RayTracingShaderGroupTypeNV::TRIANGLES_HIT_GROUP;
+            if shader_info.1 == vk::ShaderStageFlags::CLOSEST_HIT_KHR {
+                group.ty = vk::RayTracingShaderGroupTypeKHR::TRIANGLES_HIT_GROUP;
                 group.closest_hit_shader = index as u32;
             } else {
-                group.ty = vk::RayTracingShaderGroupTypeNV::GENERAL;
+                group.ty = vk::RayTracingShaderGroupTypeKHR::GENERAL;
                 group.general_shader = index as u32;
             }
             groups.push(group);
         }
-        let max_recursion = unsafe { context.ray_tracing_properties() }.max_recursion_depth;
-        let create_info = vk::RayTracingPipelineCreateInfoNV::builder()
+        // TODO: fetch from somewhere
+        let max_recursion_depth = 8;
+        let create_info = vk::RayTracingPipelineCreateInfoKHR::builder()
             .stages(&stages)
             .groups(&groups)
-            .max_recursion_depth(max_recursion)
+            .max_pipeline_ray_recursion_depth(max_recursion_depth)
             .layout(info.layout)
             .build();
         let pipeline = unsafe {
             context
                 .ray_tracing()
-                .create_ray_tracing_pipelines(vk::PipelineCache::null(), &[create_info], None)
+                .create_ray_tracing_pipelines(
+                    vk::DeferredOperationKHR::null(),
+                    vk::PipelineCache::null(),
+                    &[create_info],
+                    None
+                )
                 .expect("Unable to create graphics pipeline")[0]
         };
 

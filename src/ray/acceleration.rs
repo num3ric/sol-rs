@@ -14,8 +14,8 @@ pub struct GeometryInstance {
 
 struct AccelerationStructure {
     context: Arc<Context>,
-    accel_struct: vk::AccelerationStructureNV,
-    accel_struct_flags: vk::BuildAccelerationStructureFlagsNV,
+    accel_struct: vk::AccelerationStructureKHR,
+    accel_struct_flags: vk::BuildAccelerationStructureFlagsKHR,
     scratch_buffer: Buffer,
     buffer: Buffer,
 }
@@ -28,16 +28,16 @@ struct MemorySpec {
 impl AccelerationStructure {
     fn compute_buffer_memory(
         context: &Arc<Context>,
-        acceleration_structure: vk::AccelerationStructureNV,
+        acceleration_structure: vk::AccelerationStructureKHR,
     ) -> (MemorySpec, MemorySpec) {
         let result: MemorySpec;
         let scratch: MemorySpec;
         unsafe {
-            let info = vk::AccelerationStructureMemoryRequirementsInfoNV::builder()
+            let info = vk::AccelerationStructureMemoryRequirementsInfo::builder()
                 .acceleration_structure(acceleration_structure)
                 .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::OBJECT);
             let mem_reqs = context
-                .ray_tracing()
+                .acceleration_structure()
                 .get_acceleration_structure_memory_requirements(&info)
                 .memory_requirements;
             result = MemorySpec {
@@ -49,7 +49,7 @@ impl AccelerationStructure {
                 .acceleration_structure(acceleration_structure)
                 .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::BUILD_SCRATCH);
             let mem_reqs = context
-                .ray_tracing()
+                .acceleration_structure()
                 .get_acceleration_structure_memory_requirements(&info)
                 .memory_requirements;
             let mut scratch_size = mem_reqs.size;
@@ -58,7 +58,7 @@ impl AccelerationStructure {
                 .acceleration_structure(acceleration_structure)
                 .ty(vk::AccelerationStructureMemoryRequirementsTypeNV::UPDATE_SCRATCH);
             let scratch_update_size = context
-                .ray_tracing()
+                .acceleration_structure()
                 .get_acceleration_structure_memory_requirements(&info)
                 .memory_requirements
                 .size;
@@ -78,8 +78,8 @@ impl AccelerationStructure {
     }
 }
 
-impl crate::Resource<vk::AccelerationStructureNV> for AccelerationStructure {
-    fn handle(&self) -> vk::AccelerationStructureNV {
+impl crate::Resource<vk::AccelerationStructureKHR> for AccelerationStructure {
+    fn handle(&self) -> vk::AccelerationStructureKHR {
         self.accel_struct
     }
 }
@@ -88,7 +88,7 @@ impl Drop for AccelerationStructure {
     fn drop(&mut self) {
         unsafe {
             self.context
-                .ray_tracing()
+                .acceleration_structure()
                 .destroy_acceleration_structure(self.accel_struct, None);
         }
     }
@@ -110,16 +110,16 @@ impl BLAS {
         vertex_stride: vk::DeviceSize,
         is_opaque: bool,
     ) -> Self {
-        let mut geometries = Vec::<vk::GeometryNV>::new();
+        let mut geometries = Vec::<vk::AccelerationStructureGeometryKHR>::new();
         for ref geo in geo_intances {
             let flags = match is_opaque {
-                true => vk::GeometryFlagsNV::OPAQUE_NV,
-                false => vk::GeometryFlagsNV::empty(),
+                true => vk::GeometryFlagsKHR::OPAQUE,
+                false => vk::GeometryFlagsKHR::empty(),
             };
             let geo_triangles = match geo.index_buffer {
                 Some(_) => {
-                    vk::GeometryTrianglesNV::builder()
-                        .vertex_data(geo.vertex_buffer)
+                    vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
+                        .vertex_data(vk::DeviceOrHostAddressConstKHR {device_address: geo.vertex_buffer})
                         .vertex_offset(geo.vertex_offset)
                         .vertex_count(geo.vertex_count)
                         .vertex_stride(vertex_stride)
@@ -131,7 +131,7 @@ impl BLAS {
                         .build()
                 }
                 None => {
-                    vk::GeometryTrianglesNV::builder()
+                    vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
                         .vertex_data(geo.vertex_buffer)
                         .vertex_offset(geo.vertex_offset)
                         .vertex_count(geo.vertex_count)
@@ -142,10 +142,10 @@ impl BLAS {
                 }
             };
             geometries.push(
-                vk::GeometryNV::builder()
-                    .geometry_type(vk::GeometryTypeNV::TRIANGLES_NV)
+                vk::AccelerationStructureGeometryKHR::builder()
+                    .geometry_type(vk::GeometryTypeKHR::TRIANGLES)
                     .geometry(
-                        vk::GeometryDataNV::builder()
+                        vk::AccelerationStructureGeometryDataKHR::builder()
                             .triangles(geo_triangles)
                             .build(),
                     )
@@ -157,7 +157,7 @@ impl BLAS {
         let (accel_struct, accel_struct_flags) = Self::create_accel_struct(
             &context,
             &geometries,
-            vk::BuildAccelerationStructureFlagsNV::PREFER_FAST_TRACE_NV,
+            vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
         );
 
         let (result_specs, scratch_specs) =
@@ -167,7 +167,7 @@ impl BLAS {
             context.clone(),
             BufferInfo::default()
                 .gpu_only()
-                .usage(vk::BufferUsageFlags::RAY_TRACING_NV)
+                .usage(vk::BufferUsageFlags::RAY_TRACING_KHR)
                 .memory_type_bits(result_specs.type_bits),
             result_specs.size,
             1,
@@ -177,7 +177,7 @@ impl BLAS {
             context.clone(),
             BufferInfo::default()
                 .gpu_only()
-                .usage(vk::BufferUsageFlags::RAY_TRACING_NV)
+                .usage(vk::BufferUsageFlags::RAY_TRACING_KHR)
                 .memory_type_bits(scratch_specs.type_bits),
             scratch_specs.size,
             1,
@@ -191,7 +191,7 @@ impl BLAS {
                 .memory_offset(buffer.get_alloc_info().get_offset() as u64)
                 .build();
             context
-                .ray_tracing()
+                .acceleration_structure()
                 .bind_acceleration_structure_memory(&[bind_info])
                 .unwrap();
 
@@ -200,8 +200,8 @@ impl BLAS {
                 .ty(vk::AccelerationStructureTypeNV::BOTTOM_LEVEL)
                 .geometries(&geometries)
                 .instance_count(0);
-            let previous = vk::AccelerationStructureNV::null();
-            context.ray_tracing().cmd_build_acceleration_structure(
+            let previous = vk::AccelerationStructureKHR::null();
+            context.acceleration_structure().cmd_build_acceleration_structure(
                 cmd,
                 &info,
                 vk::Buffer::null(),
@@ -215,18 +215,18 @@ impl BLAS {
 
             let memory_barrier = vk::MemoryBarrier::builder()
                 .src_access_mask(
-                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_NV
-                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_NV,
+                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR
+                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR,
                 )
                 .dst_access_mask(
-                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_NV
-                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_NV,
+                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR
+                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR,
                 )
                 .build();
             context.device().cmd_pipeline_barrier(
                 cmd,
-                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_NV,
-                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_NV,
+                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
+                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
                 vk::DependencyFlags::empty(),
                 &[memory_barrier],
                 &[],
@@ -251,10 +251,10 @@ impl BLAS {
     fn create_accel_struct(
         context: &Arc<Context>,
         geometries: &Vec<vk::GeometryNV>,
-        flags: vk::BuildAccelerationStructureFlagsNV,
+        flags: vk::BuildAccelerationStructureFlagsKHR,
     ) -> (
-        vk::AccelerationStructureNV,
-        vk::BuildAccelerationStructureFlagsNV,
+        vk::AccelerationStructureKHR,
+        vk::BuildAccelerationStructureFlagsKHR,
     ) {
         let create_info = vk::AccelerationStructureCreateInfoNV::builder()
             .info(
@@ -268,7 +268,7 @@ impl BLAS {
             .build();
         let accel_struct = unsafe {
             context
-                .ray_tracing()
+                .acceleration_structure()
                 .create_acceleration_structure(&create_info, None)
                 .unwrap()
         };
@@ -284,8 +284,8 @@ impl BLAS {
     }
 }
 
-impl crate::Resource<vk::AccelerationStructureNV> for BLAS {
-    fn handle(&self) -> vk::AccelerationStructureNV {
+impl crate::Resource<vk::AccelerationStructureKHR> for BLAS {
+    fn handle(&self) -> vk::AccelerationStructureKHR {
         self.accel_struct.handle()
     }
 }
@@ -353,7 +353,7 @@ impl TLAS {
         let (accel_struct, accel_struct_flags) = Self::create_accel_struct(
             &context,
             blas.len() as u32,
-            vk::BuildAccelerationStructureFlagsNV::ALLOW_UPDATE_NV,
+            vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE,
         );
 
         let (result_specs, scratch_specs) =
@@ -363,7 +363,7 @@ impl TLAS {
             context.clone(),
             BufferInfo::default()
                 .gpu_only()
-                .usage(vk::BufferUsageFlags::RAY_TRACING_NV)
+                .usage(vk::BufferUsageFlags::ACCELERATION_STRUCTURE_STORAGE_KHR)
                 .memory_type_bits(result_specs.type_bits),
             result_specs.size,
             1,
@@ -373,7 +373,7 @@ impl TLAS {
             context.clone(),
             BufferInfo::default()
                 .gpu_only()
-                .usage(vk::BufferUsageFlags::RAY_TRACING_NV)
+                .usage(vk::BufferUsageFlags::STORAGE_BUFFER | vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS)
                 .memory_type_bits(scratch_specs.type_bits),
             scratch_specs.size,
             1,
@@ -384,7 +384,7 @@ impl TLAS {
             context.clone(),
             BufferInfo::default()
                 .cpu_to_gpu()
-                .usage(vk::BufferUsageFlags::RAY_TRACING_NV),
+                .usage(vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | ash::vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR),
             instance_size as u64,
             blas.len() as u32,
         );
@@ -400,7 +400,7 @@ impl TLAS {
             },
             instance_buffer,
         };
-        let previous = vk::AccelerationStructureNV::null();
+        let previous = vk::AccelerationStructureKHR::null();
         result.generate(cmd, blas, previous, false);
         result
     }
@@ -408,10 +408,10 @@ impl TLAS {
     fn create_accel_struct(
         context: &Arc<Context>,
         instance_count: u32,
-        flags: vk::BuildAccelerationStructureFlagsNV,
+        flags: vk::BuildAccelerationStructureFlagsKHR,
     ) -> (
-        vk::AccelerationStructureNV,
-        vk::BuildAccelerationStructureFlagsNV,
+        vk::AccelerationStructureKHR,
+        vk::BuildAccelerationStructureFlagsKHR,
     ) {
         let info = vk::AccelerationStructureInfoNV::builder()
             .ty(vk::AccelerationStructureTypeNV::TOP_LEVEL)
@@ -424,7 +424,7 @@ impl TLAS {
             .build();
         let accel_struct = unsafe {
             context
-                .ray_tracing()
+                .acceleration_structure()
                 .create_acceleration_structure(&create_info, None)
                 .unwrap()
         };
@@ -435,7 +435,7 @@ impl TLAS {
         &mut self,
         cmd: vk::CommandBuffer,
         blas: &[BLAS],
-        previous: vk::AccelerationStructureNV,
+        previous: vk::AccelerationStructureKHR,
         update_only: bool,
     ) {
         //TODO: Compile time asserts?
@@ -445,7 +445,7 @@ impl TLAS {
         for (i, blas) in blas.iter().enumerate() {
             let struct_handle = unsafe {
                 self.context
-                    .ray_tracing()
+                    .acceleration_structure()
                     .get_acceleration_structure_handle(blas.handle())
                     .unwrap()
             };
@@ -456,7 +456,7 @@ impl TLAS {
                 i as u32,
                 0xff,
                 blas.hit_group_index,
-                vk::GeometryInstanceFlagsNV::TRIANGLE_CULL_DISABLE_NV,
+                vk::GeometryInstanceFlagsNV::TRIANGLE_CULL_DISABLE_KHR,
                 struct_handle,
             ));
         }
@@ -476,7 +476,7 @@ impl TLAS {
                     .memory_offset(self.accel_struct.buffer.get_alloc_info().get_offset() as u64)
                     .build();
                 self.context
-                    .ray_tracing()
+                    .acceleration_structure()
                     .bind_acceleration_structure_memory(&[bind_info])
                     .unwrap();
             }
@@ -487,7 +487,7 @@ impl TLAS {
                 .instance_count(instances.len() as u32)
                 .geometries(&[]);
 
-            self.context.ray_tracing().cmd_build_acceleration_structure(
+            self.context.acceleration_structure().cmd_build_acceleration_structures(
                 cmd,
                 &info,
                 self.instance_buffer.handle(),
@@ -501,18 +501,18 @@ impl TLAS {
 
             let memory_barrier = vk::MemoryBarrier::builder()
                 .src_access_mask(
-                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_NV
-                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_NV,
+                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR
+                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR,
                 )
                 .dst_access_mask(
-                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_NV
-                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_NV,
+                    vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR
+                        | vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR,
                 )
                 .build();
             self.context.device().cmd_pipeline_barrier(
                 cmd,
-                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_NV,
-                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_NV,
+                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
+                vk::PipelineStageFlags::ACCELERATION_STRUCTURE_BUILD_KHR,
                 vk::DependencyFlags::empty(),
                 &[memory_barrier],
                 &[],
@@ -522,8 +522,8 @@ impl TLAS {
     }
 }
 
-impl crate::Resource<vk::AccelerationStructureNV> for TLAS {
-    fn handle(&self) -> vk::AccelerationStructureNV {
+impl crate::Resource<vk::AccelerationStructureKHR> for TLAS {
+    fn handle(&self) -> vk::AccelerationStructureKHR {
         self.accel_struct.handle()
     }
 }

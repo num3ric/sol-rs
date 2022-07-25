@@ -1,5 +1,5 @@
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
@@ -37,15 +37,15 @@ layout(set = 1, binding = 3, scalar) buffer ScnDesc { SceneInstance i[]; } scnDe
 layout(set = 1, binding = 4, scalar) buffer Vertices { ModelVertex v[]; } vertices[];
 layout(set = 1, binding = 5) buffer Indices { uint64_t i[]; } indices[];
 
-layout(location = 0) rayPayloadInNV Payload prd;
+layout(location = 0) rayPayloadInEXT Payload prd;
 
-hitAttributeNV vec3 attribs;
+hitAttributeEXT vec3 attribs;
 
 
 vec2 getBlueRand2( uint i )
 {
 	ivec2 texSize = textureSize( blueNoise, 0 ).xy;
-	ivec2 blueCoord = ivec2( mod( gl_LaunchIDNV.xy + nextRand2(prd.rng) * texSize, vec2( texSize ) ) );
+	ivec2 blueCoord = ivec2( mod( gl_LaunchIDEXT.xy + nextRand2(prd.rng) * texSize, vec2( texSize ) ) );
 	vec4 blue = texelFetch( blueNoise, blueCoord, 0 );
 	return vec2( blue[i%4], blue[(i+1)%4] );
 }
@@ -76,9 +76,9 @@ void main()
 	// Transforming the position to world space
 	world_pos = vec3(scnDesc.i[gl_InstanceID].transform * vec4(world_pos, 1.0));
 
-	prd.rayOrigin = world_pos + 0.00001 * gl_WorldRayDirectionNV;
+	prd.rayOrigin = world_pos + 0.00001 * gl_WorldRayDirectionEXT;
 	vec2 Xi = getBlueRand2( prd.depth + prd.depth * prd.sampleId );
-	vec3 hitNorm = normal * sign(dot(-gl_WorldRayDirectionNV, normal));
+	vec3 hitNorm = normal * sign(dot(-gl_WorldRayDirectionEXT, normal));
 	prd.rayDir = sampleCosineWeightedHemisphere(hitNorm, Xi);
 	prd.rayRange = vec2(0.001f, 10.0f);
 	if( prd.depth > 0 ){

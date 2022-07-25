@@ -1,6 +1,6 @@
 use crate::*;
 use ash::{
-    extensions::{ext::DebugUtils, khr::Surface, nv::RayTracing},
+    extensions::{ext::DebugUtils, khr},
     vk, Device, Entry, Instance,
 };
 use vk_mem::AllocatorCreateFlags;
@@ -43,7 +43,7 @@ unsafe extern "system" fn vulkan_debug_callback(
 
 fn find_queue_families(
     instance: &Instance,
-    surface: &Surface,
+    surface: &khr::Surface,
     surface_khr: vk::SurfaceKHR,
     device: vk::PhysicalDevice,
 ) -> (Option<u32>, Option<u32>) {
@@ -156,7 +156,9 @@ pub struct SharedContext {
     pub queue_family_indices: QueueFamiliesIndices,
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
-    pub ray_tracing: RayTracing,
+    pub acceleration_structure: khr::AccelerationStructure,
+    pub ray_tracing: khr::RayTracingPipeline,
+    pub ray_tracing_properties: vk::PhysicalDeviceRayTracingPipelinePropertiesKHR,
 }
 
 impl SharedContext {
@@ -191,7 +193,7 @@ impl SharedContext {
                 .application_version(0)
                 .engine_name(&app_name)
                 .engine_version(0)
-                .api_version(vk::API_VERSION_1_1);
+                .api_version(vk::API_VERSION_1_3);
 
             let create_info = vk::InstanceCreateInfo::builder()
                 .application_info(&appinfo)
@@ -274,7 +276,10 @@ impl SharedContext {
                 vulkan_api_version: 0,
             };
             let allocator = vk_mem::Allocator::new(&alloc_create_info).unwrap();
-            let ray_tracing = RayTracing::new(&instance, &device);
+
+            let acceleration_structure = khr::AccelerationStructure::new(&instance, &device);
+            let ray_tracing = khr::RayTracingPipeline::new(&instance, &device);
+            let ray_tracing_properties = khr::RayTracingPipeline::get_properties(&instance, pdevice);
 
             SharedContext {
                 entry,
@@ -287,7 +292,9 @@ impl SharedContext {
                 queue_family_indices,
                 graphics_queue,
                 present_queue,
+                acceleration_structure,
                 ray_tracing,
+                ray_tracing_properties,
             }
         }
     }
@@ -328,12 +335,16 @@ impl SharedContext {
         &self.allocator
     }
 
-    pub fn ray_tracing(&self) -> &RayTracing {
+    pub fn acceleration_structure(&self) -> &khr::AccelerationStructure {
+        &self.acceleration_structure
+    }
+
+    pub fn ray_tracing(&self) -> &khr::RayTracingPipeline {
         &self.ray_tracing
     }
 
-    pub unsafe fn ray_tracing_properties(&self) -> vk::PhysicalDeviceRayTracingPropertiesNV {
-        RayTracing::get_properties(&self.instance, self.pdevice)
+    pub unsafe fn ray_tracing_properties(&self) -> &vk::PhysicalDeviceRayTracingPipelinePropertiesKHR {
+        &self.ray_tracing_properties
     }
 
     pub fn queue_family_indices(&self) -> &QueueFamiliesIndices {
@@ -419,11 +430,15 @@ impl Context {
         self.shared_context.allocator()
     }
 
-    pub fn ray_tracing(&self) -> &RayTracing {
+    pub fn acceleration_structure(&self) -> &khr::AccelerationStructure {
+        self.shared_context.acceleration_structure()
+    }
+
+    pub fn ray_tracing(&self) -> &khr::RayTracingPipeline {
         self.shared_context.ray_tracing()
     }
 
-    pub unsafe fn ray_tracing_properties(&self) -> vk::PhysicalDeviceRayTracingPropertiesNV {
+    pub unsafe fn ray_tracing_properties(&self) -> &vk::PhysicalDeviceRayTracingPipelinePropertiesKHR {
         self.shared_context.ray_tracing_properties()
     }
 

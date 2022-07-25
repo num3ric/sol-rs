@@ -104,13 +104,13 @@ pub fn setup(app: &mut sol::App) -> AppData {
         sol::DescriptorSetLayoutInfo::default()
             .binding(
                 0,
-                vk::DescriptorType::ACCELERATION_STRUCTURE_NV,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::DescriptorType::ACCELERATION_STRUCTURE_KHR,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 1,
                 vk::DescriptorType::STORAGE_IMAGE,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 2,
@@ -120,18 +120,18 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .binding(
                 3,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             )
             .bindings(
                 4,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
                 instance_count,
             )
             .bindings(
                 5,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
                 instance_count,
             ),
     );
@@ -142,7 +142,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .desc_set_layouts(&[layout_scene.handle(), layout_pass.handle()])
             .push_constant_range(
                 vk::PushConstantRange::builder()
-                    .stage_flags(vk::ShaderStageFlags::RAYGEN_NV)
+                    .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
                     .size(std::mem::size_of::<u32>() as u32)
                     .build(),
             ),
@@ -153,15 +153,15 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .layout(pipeline_layout.handle())
             .shader(
                 sol::util::find_asset("glsl/ao.rgen").unwrap(),
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/ao.rmiss").unwrap(),
-                vk::ShaderStageFlags::MISS_NV,
+                vk::ShaderStageFlags::MISS_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/ao.rchit").unwrap(),
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             )
             //.specialization(&0u32, 0)
             .name("AO_mat".to_string()),
@@ -264,7 +264,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             device.cmd_push_constants(
                 cmd,
                 data.pipeline_layout.handle(),
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
                 0,
                 &data.accumulation_start_frame.to_ne_bytes(),
             )
@@ -300,12 +300,12 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
         device.cmd_bind_pipeline(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline.handle(),
         );
         device.cmd_bind_descriptor_sets(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
             &[desc_scene, desc_pass.handle()],
@@ -331,7 +331,6 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
-            device_extensions: vec![ash::extensions::nv::RayTracing::name()],
             ..Default::default()
         },
     }
