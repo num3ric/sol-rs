@@ -9,7 +9,7 @@ pub struct BufferInfo<'a> {
     pub name: &'a str,
     pub usage: vk::BufferUsageFlags,
     pub mem_usage: MemoryLocation,
-    pub memory_type_bits: u32,
+    pub memory_type_bits: Option<u32>,
     pub index_type: Option<vk::IndexType>,
 }
 
@@ -19,7 +19,7 @@ impl std::default::Default for BufferInfo<'_> {
             name: "Buffer",
             usage: vk::BufferUsageFlags::default(),
             mem_usage: MemoryLocation::CpuToGpu,
-            memory_type_bits: 0,
+            memory_type_bits: None,
             index_type: None,
         }
     }
@@ -87,7 +87,7 @@ impl<'a> BufferInfo<'a> {
         self
     }
     pub fn memory_type_bits(mut self, memory_type_bits: u32) -> Self {
-        self.memory_type_bits = memory_type_bits;
+        self.memory_type_bits = Some(memory_type_bits);
         self
     }
 }
@@ -114,7 +114,10 @@ impl Buffer {
             .usage(info.usage);
 
         let buffer = unsafe { context.device().create_buffer(&create_info, None) }.unwrap();
-        let requirements = unsafe { context.device().get_buffer_memory_requirements(buffer) };
+        let mut requirements = unsafe { context.device().get_buffer_memory_requirements(buffer) };
+        if info.memory_type_bits.is_some() {
+            requirements.memory_type_bits |= info.memory_type_bits.unwrap();
+        }
 
         let allocation = context.allocator()
             .lock()
@@ -154,13 +157,16 @@ impl Buffer {
         }
 
         let buffer = unsafe { context.device().create_buffer(&create_info, None) }.unwrap();
-        let requirements = unsafe { context.device().get_buffer_memory_requirements(buffer) };
+        let mut requirements = unsafe { context.device().get_buffer_memory_requirements(buffer) };
+        if info.memory_type_bits.is_some() {
+            requirements.memory_type_bits |= info.memory_type_bits.unwrap();
+        }
 
         let allocation = context.allocator()
             .lock()
             .unwrap()
             .allocate(&AllocationCreateDesc {
-                name: "Buffer Name",
+                name: info.name,
                 requirements,
                 location: info.mem_usage,
                 linear: true, // Buffers are always linear
@@ -244,6 +250,11 @@ impl Buffer {
 
     pub fn get_size(&self) -> vk::DeviceSize {
         self.allocation.size()
+    }
+
+    pub unsafe fn get_memory(&self) -> vk::DeviceMemory
+    {
+        self.allocation.memory()
     }
 
     pub fn get_offset(&self) -> vk::DeviceSize {
