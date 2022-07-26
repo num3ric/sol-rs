@@ -468,7 +468,7 @@ impl Drop for Image2d {
             self.context.device().destroy_image(self.image, None);
             
             if self.allocation.is_some() {
-                let to_drop = std::mem::replace(&mut self.allocation, None).unwrap();
+                let to_drop = self.allocation.take().unwrap();
                 self.context.allocator()
                     .lock()
                     .unwrap()

@@ -99,15 +99,6 @@ impl App {
     }
 }
 
-impl Drop for App {
-    fn drop(&mut self) {
-        unsafe {
-            std::mem::ManuallyDrop::drop(&mut self.renderer.swapchain);
-            self.window.destroy_surface();
-        }
-    }
-}
-
 pub type PrepareFn = fn() -> AppSettings;
 pub type SetupFn<T> = fn(&mut App) -> T; // TODO: how do we specify FnOnce here?
 pub type UpdateFn<T> = fn(&mut App, &mut T);

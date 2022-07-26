@@ -5,6 +5,7 @@ use ash::{
 };
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 use std::borrow::Cow;
+use std::mem::ManuallyDrop;
 use std::ffi::{CStr, CString};
 use std::sync::{Arc, Mutex};
 
@@ -152,7 +153,7 @@ pub struct SharedContext {
     debug_call_back: vk::DebugUtilsMessengerEXT,
     device: Device,
     pdevice: vk::PhysicalDevice,
-    allocator: Arc<Mutex<Allocator>>,
+    allocator: ManuallyDrop<Arc<Mutex<Allocator>>>,
     pub queue_family_indices: QueueFamiliesIndices,
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
@@ -168,6 +169,7 @@ impl SharedContext {
             let mut layer_names = Vec::<CString>::new();
             if cfg!(debug_assertions) {
                 layer_names.push(CString::new("VK_LAYER_KHRONOS_validation").unwrap());
+                //layer_names.push(CString::new("VK_LAYER_LUNARG_api_dump").unwrap());
             }
             let layers_names_raw: Vec<*const i8> = layer_names
                 .iter()
@@ -279,7 +281,7 @@ impl SharedContext {
                 debug_call_back,
                 device,
                 pdevice,
-                allocator: Arc::new(Mutex::new(allocator)),
+                allocator: ManuallyDrop::new(Arc::new(Mutex::new(allocator))),
                 queue_family_indices,
                 graphics_queue,
                 present_queue,
@@ -339,8 +341,8 @@ impl SharedContext {
 
 impl Drop for SharedContext {
     fn drop(&mut self) {
-        drop(self.allocator.as_ref()); // Explicitly drop before destruction of device and instance.
         unsafe {
+            std::mem::ManuallyDrop::drop(&mut self.allocator); // Explicitly drop before destruction of device and instance.
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);
             self.device.destroy_device(None);

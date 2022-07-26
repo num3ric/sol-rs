@@ -1,5 +1,5 @@
 use crate::*;
-use ash::{vk};
+use ash::vk;
 use std::sync::Arc;
 use std::{ffi::CStr, mem::ManuallyDrop};
 
@@ -135,14 +135,8 @@ impl AppRenderer {
     pub fn recreate_swapchain(&mut self, window: &Window) {
         unsafe {
             self.context.device().device_wait_idle().unwrap();
-            ManuallyDrop::drop(&mut self.swapchain);
         }
-        self.swapchain = ManuallyDrop::new(Swapchain::new(
-            self.context.shared().clone(),
-            window,
-            &self.settings,
-        ));
-        self.swapchain.transition_depth_images(&self.context);
+
         for framebuffer in self.framebuffers.iter() {
             unsafe {
                 self.context
@@ -150,6 +144,18 @@ impl AppRenderer {
                     .destroy_framebuffer(*framebuffer, None);
             }
         }
+
+        unsafe {
+            ManuallyDrop::drop(&mut self.swapchain);
+        }
+        
+        self.swapchain = ManuallyDrop::new(Swapchain::new(
+            self.context.shared().clone(),
+            window,
+            &self.settings,
+        ));
+        self.swapchain.transition_depth_images(&self.context);
+
         self.framebuffers = self
             .swapchain
             .create_framebuffers(&self.renderpass, &window);
@@ -390,6 +396,8 @@ impl Drop for AppRenderer {
             self.frames.iter().for_each(|fence| {
                 device.destroy_fence(fence.in_flight_fence, None);
             });
+
+            ManuallyDrop::drop(&mut self.swapchain);
         }
     }
 }
