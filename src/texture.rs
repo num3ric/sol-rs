@@ -39,6 +39,7 @@ impl Image2d {
         image_info: &vk::ImageCreateInfo,
         aspect_mask: vk::ImageAspectFlags,
         level_count: u32,
+        name: &str
     ) -> Self {
         unsafe {
             assert!(image_info.extent.width + image_info.extent.height > 2);
@@ -52,7 +53,7 @@ impl Image2d {
                 .lock()
                 .unwrap()
                 .allocate(&AllocationCreateDesc {
-                    name: "Image2D",
+                    name,
                     requirements,
                     location: MemoryLocation::GpuOnly,
                     linear: false,
@@ -486,6 +487,7 @@ pub struct Texture2d {
 
 impl Texture2d {
     pub fn new(context: Arc<Context>, filepath: PathBuf) -> Self {
+        let filename = filepath.clone().into_os_string().into_string().unwrap();
         let mut source_image = image::open(filepath).expect("Failed to find image."); // this function is slow in debug mode.
         source_image = source_image.flipv();
         let size = source_image.dimensions();
@@ -516,6 +518,7 @@ impl Texture2d {
             &image_info,
             vk::ImageAspectFlags::COLOR,
             mip_levels,
+            &filename
         );
 
         {

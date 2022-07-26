@@ -98,6 +98,7 @@ impl Swapchain {
                         &depth_image_create_info,
                         vk::ImageAspectFlags::DEPTH,
                         1,
+                        "SwapchainDepthStencil"
                     ));
                 }
             }
@@ -123,6 +124,7 @@ impl Swapchain {
                         &image_create_info,
                         vk::ImageAspectFlags::COLOR,
                         1,
+                        "SwapchainResolve"
                     ));
                 }
             }

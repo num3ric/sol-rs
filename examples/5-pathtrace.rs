@@ -75,6 +75,7 @@ fn create_image_target(
         &image_info,
         vk::ImageAspectFlags::COLOR,
         1,
+        "TargetRT"
     )
 }
 

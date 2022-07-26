@@ -5,16 +5,18 @@ use std::{ffi::c_void, mem::align_of};
 use gpu_allocator::{MemoryLocation, vulkan::{Allocation, AllocationCreateDesc}};
 
 #[derive(Clone, Copy)]
-pub struct BufferInfo {
+pub struct BufferInfo<'a> {
+    pub name: &'a str,
     pub usage: vk::BufferUsageFlags,
     pub mem_usage: MemoryLocation,
     pub memory_type_bits: u32,
     pub index_type: Option<vk::IndexType>,
 }
 
-impl std::default::Default for BufferInfo {
+impl std::default::Default for BufferInfo<'_> {
     fn default() -> Self {
         BufferInfo {
+            name: "Buffer",
             usage: vk::BufferUsageFlags::default(),
             mem_usage: MemoryLocation::CpuToGpu,
             memory_type_bits: 0,
@@ -23,7 +25,11 @@ impl std::default::Default for BufferInfo {
     }
 }
 
-impl BufferInfo {
+impl<'a> BufferInfo<'a> {
+    pub fn name(mut self, name: &'a str ) -> Self {
+        self.name = name;
+        self
+    }
     pub fn usage(mut self, usage: vk::BufferUsageFlags) -> Self {
         self.usage = usage;
         self
@@ -114,7 +120,7 @@ impl Buffer {
             .lock()
             .unwrap()
             .allocate(&AllocationCreateDesc {
-                name: "Buffer Name",
+                name: info.name,
                 requirements,
                 location: info.mem_usage,
                 linear: true, // Buffers are always linear
