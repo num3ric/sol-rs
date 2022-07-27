@@ -466,9 +466,8 @@ impl Drop for Image2d {
     fn drop(&mut self) {
         unsafe {
             self.context.device().destroy_image_view(self.view, None);
-            self.context.device().destroy_image(self.image, None);
-            
             if self.allocation.is_some() {
+                self.context.device().destroy_image(self.image, None);
                 let to_drop = self.allocation.take().unwrap();
                 self.context.allocator()
                     .lock()
