@@ -69,6 +69,7 @@ fn create_image_target(context: &Arc<sol::Context>, window: &sol::Window) -> sol
         &image_info,
         vk::ImageAspectFlags::COLOR,
         1,
+        "TargetRT"
     )
 }
 

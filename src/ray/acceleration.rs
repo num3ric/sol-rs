@@ -435,7 +435,7 @@ impl TLAS {
             //                 .get_alloc_info()
             //                 .get_device_memory(),
             //         )
-            //         .memory_offset(self.accel_struct.buffer.get_alloc_info().get_offset() as u64)
+            //         .memory_offset(self.accel_struct.buffer.get_alloc().offset() as u64)
             //         .build();
             //     self.context
             //         .acceleration_structure()

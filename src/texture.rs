@@ -3,6 +3,7 @@ use ash::{vk};
 use image::GenericImageView;
 use std::{cmp::max, sync::Arc};
 use std::{path::PathBuf, ptr};
+use gpu_allocator::{MemoryLocation, vulkan::{Allocation, AllocationCreateDesc}};
 
 //TODO: image resource trait
 
@@ -29,7 +30,7 @@ pub struct Image2d {
     view: vk::ImageView,
     layout: vk::ImageLayout,
     format: vk::Format,
-    allocation: Option<vk_mem::Allocation>,
+    allocation: Option<Allocation>,
 }
 
 impl Image2d {
@@ -38,15 +39,28 @@ impl Image2d {
         image_info: &vk::ImageCreateInfo,
         aspect_mask: vk::ImageAspectFlags,
         level_count: u32,
+        name: &str
     ) -> Self {
         unsafe {
             assert!(image_info.extent.width + image_info.extent.height > 2);
 
-            let mut allocation_info = vk_mem::AllocationCreateInfo::default();
-            allocation_info.usage = vk_mem::MemoryUsage::GpuOnly;
-            let (image, alloc, _) = context
-                .allocator()
-                .create_image(&image_info, &allocation_info)
+            // Create image
+            let image = context.device().create_image(&image_info, None).unwrap();
+
+            // Allocate and bind memory to image
+            let requirements = context.device().get_image_memory_requirements(image);
+            let alloc = context.allocator()
+                .lock()
+                .unwrap()
+                .allocate(&AllocationCreateDesc {
+                    name,
+                    requirements,
+                    location: MemoryLocation::GpuOnly,
+                    linear: false,
+                })
+                .unwrap();
+            
+            context.device().bind_image_memory(image, alloc.memory(), alloc.offset())
                 .unwrap();
 
             let subresource_range = vk::ImageSubresourceRange::builder()
@@ -452,12 +466,13 @@ impl Drop for Image2d {
     fn drop(&mut self) {
         unsafe {
             self.context.device().destroy_image_view(self.view, None);
-
-            match self.allocation {
-                Some(alloc) => {
-                    self.context.allocator().destroy_image(self.image, alloc);
-                }
-                None => {}
+            if self.allocation.is_some() {
+                self.context.device().destroy_image(self.image, None);
+                let to_drop = self.allocation.take().unwrap();
+                self.context.allocator()
+                    .lock()
+                    .unwrap()
+                    .free(to_drop).unwrap();
             }
         }
     }
@@ -471,6 +486,7 @@ pub struct Texture2d {
 
 impl Texture2d {
     pub fn new(context: Arc<Context>, filepath: PathBuf) -> Self {
+        let filename = filepath.clone().into_os_string().into_string().unwrap();
         let mut source_image = image::open(filepath).expect("Failed to find image."); // this function is slow in debug mode.
         source_image = source_image.flipv();
         let size = source_image.dimensions();
@@ -501,6 +517,7 @@ impl Texture2d {
             &image_info,
             vk::ImageAspectFlags::COLOR,
             mip_levels,
+            &filename
         );
 
         {
@@ -509,7 +526,7 @@ impl Texture2d {
                 context.clone(),
                 BufferInfo::default()
                     .usage(vk::BufferUsageFlags::TRANSFER_SRC)
-                    .cpu_only(),
+                    .cpu_to_gpu(),
                 &image_data,
             );
             let cmd = context.begin_single_time_cmd();

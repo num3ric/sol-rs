@@ -9,7 +9,7 @@ winit = "0.26.1"
 image = "0.24.1"
 ash = "0.36.0"
 ash-window = "0.9.0"
-vk-mem = { git="https://github.com/gwihlidal/vk-mem-rs" }
+gpu-allocator = "0.18.0"
 shaderc = "0.7"
 glam = { version = "0.20.2", features = ["serde"] }
 gltf = "1.0.0"
