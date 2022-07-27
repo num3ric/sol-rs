@@ -261,15 +261,6 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
-            device_extensions: vec![
-                vk::KhrGetMemoryRequirements2Fn::name(),
-                vk::KhrVulkanMemoryModelFn::name(),
-                vk::KhrPipelineLibraryFn::name(),
-                vk::KhrDeferredHostOperationsFn::name(),
-                vk::KhrBufferDeviceAddressFn::name(),
-                vk::KhrAccelerationStructureFn::name(),
-                vk::KhrRayTracingPipelineFn::name(),
-            ],
             ..Default::default()
         },
     }

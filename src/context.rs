@@ -116,7 +116,7 @@ fn create_logical_device_with_graphics_queue(
     let supported_extensions: HashSet<String> = unsafe {
         let extension_properties = instance
             .enumerate_device_extension_properties(device).unwrap();
-        dbg!("Extension properties:\n{:#?}", &extension_properties);
+        //dbg!("Extension properties:\n{:#?}", &extension_properties);
         extension_properties
             .iter()
             .map(|ext| {
@@ -128,7 +128,61 @@ fn create_logical_device_with_graphics_queue(
             .collect()
     };
 
-    let mut device_extensions_ptrs = vec![ash::extensions::khr::Swapchain::name().as_ptr()];
+    let mut device_extensions_ptrs = vec![
+        vk::ExtDescriptorIndexingFn::name().as_ptr(),
+        vk::ExtScalarBlockLayoutFn::name().as_ptr(),
+        vk::KhrMaintenance1Fn::name().as_ptr(),
+        vk::KhrMaintenance2Fn::name().as_ptr(),
+        vk::KhrMaintenance3Fn::name().as_ptr(),
+        vk::KhrGetMemoryRequirements2Fn::name().as_ptr(),
+        vk::KhrImagelessFramebufferFn::name().as_ptr(),
+        vk::KhrImageFormatListFn::name().as_ptr(),
+        vk::KhrDescriptorUpdateTemplateFn::name().as_ptr(),
+        // Rust-GPU
+        vk::KhrShaderFloat16Int8Fn::name().as_ptr(),
+        // DLSS
+        #[cfg(feature = "dlss")]
+        {
+            b"VK_NVX_binary_import\0".as_ptr() as *const i8
+        },
+        #[cfg(feature = "dlss")]
+        {
+            b"VK_KHR_push_descriptor\0".as_ptr() as *const i8
+        },
+        #[cfg(feature = "dlss")]
+        vk::NvxImageViewHandleFn::name().as_ptr(),
+    ];
+
+    device_extensions_ptrs.push(ash::extensions::khr::Swapchain::name().as_ptr());
+
+    let ray_tracing_extensions = [
+        vk::KhrVulkanMemoryModelFn::name().as_ptr(), // used in ray tracing shaders
+        vk::KhrPipelineLibraryFn::name().as_ptr(),   // rt dep
+        vk::KhrDeferredHostOperationsFn::name().as_ptr(), // rt dep
+        vk::KhrBufferDeviceAddressFn::name().as_ptr(), // rt dep
+        vk::KhrAccelerationStructureFn::name().as_ptr(),
+        vk::KhrRayTracingPipelineFn::name().as_ptr(),
+    ];
+
+    let ray_tracing_enabled = unsafe {
+        ray_tracing_extensions.iter().all(|ext| {
+            let ext = std::ffi::CStr::from_ptr(*ext).to_string_lossy();
+
+            let supported = supported_extensions.contains(ext.as_ref());
+
+            if !supported {
+                dbg!("Ray tracing extension not supported: {}", ext);
+            }
+
+            supported
+        })
+    };
+
+    if ray_tracing_enabled {
+        dbg!("All ray tracing extensions are supported");
+        device_extensions_ptrs.extend(ray_tracing_extensions.iter());
+    }
+
     for ext in device_extensions {
         device_extensions_ptrs.push((*ext).as_ptr());
     }
