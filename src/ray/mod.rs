@@ -80,7 +80,7 @@ impl SceneDescription {
                 let mut geo_intances = Vec::<GeometryInstance>::new();
                 let mut instance_indices = Vec::<usize>::new();
                 
-                let (index_buffer, index_count, index_offset) = match &mesh.index_buffer {
+                let (index_buffer, index_count, index_offset_size) = match &mesh.index_buffer {
                     Some(buffer) => (
                         Some(buffer.get_device_address()),
                         Some(primitive.get_index_count()),
@@ -91,10 +91,11 @@ impl SceneDescription {
                 geo_intances.push(GeometryInstance {
                     vertex_buffer: mesh.vertex_buffer.get_device_address(),
                     vertex_count: primitive.get_vertex_count(),
-                    vertex_offset: primitive.get_vertex_offset_size(),
+                    vertex_offset_size: primitive.get_vertex_offset_size(),
+                    vertex_offset: primitive.get_vertex_offset(),
                     index_buffer,
                     index_count,
-                    index_offset,
+                    index_offset_size,
                     transform: glam::Mat4::IDENTITY, //TODO: Does this work??
                 });
 

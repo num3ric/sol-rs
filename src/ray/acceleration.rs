@@ -6,10 +6,11 @@ use std::sync::Arc;
 pub struct GeometryInstance {
     pub vertex_buffer: vk::DeviceAddress,
     pub vertex_count: u32,
-    pub vertex_offset: vk::DeviceSize,
+    pub vertex_offset: u32,
+    pub vertex_offset_size: vk::DeviceSize,
     pub index_buffer: Option<vk::DeviceAddress>,
     pub index_count: Option<u32>,
-    pub index_offset: Option<vk::DeviceSize>,
+    pub index_offset_size: Option<vk::DeviceSize>,
     pub transform: glam::Mat4,
 }
 
@@ -59,12 +60,6 @@ fn create_accel_struct(
                 max_primitive_counts,
             )
     };
-
-    println!(
-        "Acceleration structure size: {}, scratch size: {}",
-        mem_reqs.acceleration_structure_size,
-        mem_reqs.build_scratch_size
-    );
 
     let backing_buffer_size: usize =
         preallocate_bytes.max(mem_reqs.acceleration_structure_size as usize);
@@ -164,12 +159,11 @@ impl BLAS {
                             device_address: geo.vertex_buffer,
                         })
                         .vertex_stride(vertex_stride)
+                        .max_vertex(geo.vertex_count - 1)
                         .vertex_format(vk::Format::R32G32B32_SFLOAT) //TODO: get from buffer
                         .index_data(ash::vk::DeviceOrHostAddressConstKHR {
                             device_address: geo.index_buffer.unwrap(),
                         })
-                        // .index_offset(geo.index_offset.unwrap())
-                        // .index_count(geo.index_count.unwrap())
                         .index_type(vk::IndexType::UINT32) //TODO: get from buffer
                         .build()
                 }
@@ -184,30 +178,24 @@ impl BLAS {
                 }
             };
 
-            let primitive_count = match geo.index_buffer {
-                Some(_) => {
-                    geo.index_count.unwrap() / 3
-                }
-                None => {
-                    geo.vertex_count / 3
-                }
-            };
-            let primitive_offset = match geo.index_buffer {
-                Some(_) => {
-                    geo.index_offset.unwrap() / 3
-                }
-                None => {
-                    0
-                }
-            };
+            let primitive_count;
+            let primitive_offset;
+            if geo.index_buffer.is_some() {
+                primitive_count = geo.index_count.unwrap() as u32 / 3;
+                primitive_offset = geo.index_offset_size.unwrap() as u32;
+            }
+            else {
+                primitive_count = geo.vertex_count / 3;
+                primitive_offset = geo.vertex_offset_size as u32;
+            }
 
             max_primitive_counts.push(primitive_count);
 
             build_range_infos.push(
                     ash::vk::AccelerationStructureBuildRangeInfoKHR::builder()
                     .primitive_count(primitive_count)
-                    .primitive_offset(0) //TODO: ?
-                    .first_vertex(0)
+                    .primitive_offset(primitive_offset)
+                    .first_vertex(geo.vertex_offset)
                     .transform_offset(0)
                     .build()
             );
