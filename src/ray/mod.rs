@@ -11,7 +11,7 @@ use ash::vk;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::{Context, Resource, Vertex};
+use crate::{Context, Vertex};
 
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
@@ -177,7 +177,7 @@ impl SceneDescription {
 
     pub fn tlas_regenerate(&mut self, cmd: vk::CommandBuffer) {
         self.tlas
-            .regenerate(cmd, &self.blas, self.tlas.handle());
+            .regenerate(cmd, &self.blas);
     }
 
     pub fn blas(&self) -> &Vec<BLAS> {

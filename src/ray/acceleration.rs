@@ -1,6 +1,5 @@
 use crate::{Buffer, BufferInfo, Context, Resource};
 use ash::{vk};
-//use core::slice::SlicePattern;
 use std::sync::Arc;
 
 pub struct GeometryInstance {
@@ -403,51 +402,47 @@ impl TLAS {
     pub fn regenerate(
         &mut self,
         cmd: vk::CommandBuffer,
-        blas: &[BLAS],
-        previous: vk::AccelerationStructureKHR,
+        blas: &[BLAS]
     ) {
-        //TODO: Compile time asserts?
         assert_eq!(std::mem::size_of::<InstanceDescriptor>(), 64);
 
         let instances = Self::create_instances(&self.context, blas);
         self.instance_buffer.update(&instances);
 
+        let geometry = ash::vk::AccelerationStructureGeometryKHR::builder()
+            .geometry_type(ash::vk::GeometryTypeKHR::INSTANCES)
+            .geometry(ash::vk::AccelerationStructureGeometryDataKHR {
+                instances: ash::vk::AccelerationStructureGeometryInstancesDataKHR::builder()
+                    .data(ash::vk::DeviceOrHostAddressConstKHR {
+                        device_address: self.instance_buffer.get_device_address(),
+                    })
+                    .build(),
+            })
+            .build();
+
+        let build_range_infos = vec![ash::vk::AccelerationStructureBuildRangeInfoKHR::builder()
+            .primitive_count(instances.len() as _)
+            .build()];
+
+        let mut geometry_info = ash::vk::AccelerationStructureBuildGeometryInfoKHR::builder()
+            .ty(ash::vk::AccelerationStructureTypeKHR::TOP_LEVEL)
+            .flags(ash::vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE)
+            .geometries(std::slice::from_ref(&geometry))
+            .mode(vk::BuildAccelerationStructureModeKHR::BUILD)
+            .build();
+        
         unsafe {
-            // if !update_only {
-            //     // Bind the acceleration structure descriptor to the actual memory that will store the AS itself
-            //     let bind_info = vk::BindAccelerationStructureMemoryInfoKHR::builder()
-            //         .acceleration_structure(self.accel_struct.handle())
-            //         .memory(
-            //             self.accel_struct
-            //                 .buffer
-            //                 .get_alloc_info()
-            //                 .get_device_memory(),
-            //         )
-            //         .memory_offset(self.accel_struct.buffer.get_alloc().offset() as u64)
-            //         .build();
-            //     self.context
-            //         .acceleration_structure()
-            //         .bind_acceleration_structure_memory(&[bind_info])
-            //         .unwrap();
-            // }
+            geometry_info.dst_acceleration_structure = self.handle();
+            geometry_info.scratch_data = ash::vk::DeviceOrHostAddressKHR {
+                device_address: self.accel_struct.scratch_buffer.get_device_address()
+            };
 
-            // let info = vk::AccelerationStructureInfoNV::builder()
-            //     .flags(self.accel_struct.accel_struct_flags)
-            //     .ty(vk::AccelerationStructureTypeNV::TOP_LEVEL)
-            //     .instance_count(instances.len() as u32)
-            //     .geometries(&[]);
-
-            // self.context.acceleration_structure().cmd_build_acceleration_structures(
-            //     cmd,
-            //     &info,
-            //     self.instance_buffer.handle(),
-            //     0, //self.instance_buffer.get_alloc_info().get_offset() as u64,
-            //     update_only,
-            //     self.accel_struct.handle(),
-            //     previous,
-            //     self.accel_struct.scratch_buffer.handle(),
-            //     0,
-            // );
+            self.context.acceleration_structure()
+                .cmd_build_acceleration_structures(
+                    cmd,
+                    std::slice::from_ref(&geometry_info),
+                    std::slice::from_ref(&&build_range_infos[..]),
+                );
 
             let memory_barrier = vk::MemoryBarrier::builder()
                 .src_access_mask(
