@@ -7,12 +7,12 @@ use winit::event::WindowEvent;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 struct SceneUniforms {
-    model: glam::Mat4,
-    view: glam::Mat4,
-    view_inverse: glam::Mat4,
-    projection: glam::Mat4,
-    projection_inverse: glam::Mat4,
-    model_view_projection: glam::Mat4,
+    model: Mat4,
+    view: Mat4,
+    view_inverse: Mat4,
+    projection: Mat4,
+    projection_inverse: Mat4,
+    model_view_projection: Mat4,
     frame: [u32; 3],
 }
 
@@ -20,7 +20,7 @@ impl SceneUniforms {
     pub fn from(camera: &scene::Camera, frame: [u32; 3]) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::IDENTITY,
+            model: Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),
@@ -144,7 +144,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .push_constant_range(
                 vk::PushConstantRange::builder()
                     .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
-                    .size(std::mem::size_of::<u32>() as u32)
+                    .size(size_of::<u32>() as u32)
                     .build(),
             ),
     );
@@ -295,7 +295,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             .buffers(5, data.scene_description.get_index_descriptors().clone()),
     );
 
-    let desc_scene = data.per_frame[frame_index].desc_set.handle();
+    let descriptor_sets = vec!(data.per_frame[frame_index].desc_set.handle(), desc_pass.handle());
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
@@ -309,7 +309,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
-            &[desc_scene, desc_pass.handle()],
+            descriptor_sets.as_slice(),
             &[],
         );
     }

@@ -94,7 +94,7 @@ impl Shader {
         let spirv_path = get_spirv_filepath(&path);
         // Only load spirv directly if its timestamp is more recent than the source file.
         if spirv_path.exists() && LOAD_SPIRV && is_more_recent(&spirv_path, &path) {
-            let mut file = std::fs::File::open(&spirv_path).unwrap();
+            let mut file = fs::File::open(&spirv_path).unwrap();
             let words = ash::util::read_spv(&mut file).unwrap();
             let shader_info = vk::ShaderModuleCreateInfo::builder().code(&words);
             unsafe {
@@ -144,7 +144,7 @@ impl Shader {
             .unwrap();
 
         if STORE_SPIRV {
-            std::fs::write(spirv_path, code.as_binary_u8()).expect("Failed to write spir-v.");
+            fs::write(spirv_path, code.as_binary_u8()).expect("Failed to write spir-v.");
         }
         let shader_info = vk::ShaderModuleCreateInfo::builder().code(code.as_binary());
         unsafe {
@@ -183,7 +183,7 @@ impl Shader {
     }
 }
 
-impl crate::Resource<vk::ShaderModule> for Shader {
+impl Resource<vk::ShaderModule> for Shader {
     fn handle(&self) -> vk::ShaderModule {
         self.module
     }
@@ -204,7 +204,7 @@ pub enum PipelineBlendMode {
     Alpha,
 }
 
-impl std::default::Default for PipelineBlendMode {
+impl Default for PipelineBlendMode {
     fn default() -> Self {
         PipelineBlendMode::Opaque
     }
@@ -227,7 +227,7 @@ pub struct PipelineInfo {
     pub specialization_entries: Vec<vk::SpecializationMapEntry>,
 }
 
-impl std::default::Default for PipelineInfo {
+impl Default for PipelineInfo {
     fn default() -> Self {
         PipelineInfo {
             layout: vk::PipelineLayout::default(),

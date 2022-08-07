@@ -7,20 +7,20 @@ use winit::event::WindowEvent;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 struct SceneUniforms {
-    model: glam::Mat4,
-    view: glam::Mat4,
-    view_inverse: glam::Mat4,
-    projection: glam::Mat4,
-    projection_inverse: glam::Mat4,
-    model_view_projection: glam::Mat4,
-    frame: glam::Vec3A,
+    model: Mat4,
+    view: Mat4,
+    view_inverse: Mat4,
+    projection: Mat4,
+    projection_inverse: Mat4,
+    model_view_projection: Mat4,
+    frame: Vec3A,
 }
 
 impl SceneUniforms {
-    pub fn from(camera: &scene::Camera, frame: glam::Vec3A) -> SceneUniforms {
+    pub fn from(camera: &scene::Camera, frame: Vec3A) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::IDENTITY,
+            model: Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),
@@ -225,6 +225,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     );
 
     let device = app.renderer.context.device();
+    let descriptor_sets = [desc_scene, desc_pass.handle()];
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
@@ -238,7 +239,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
-            &[desc_scene, desc_pass.handle()],
+            descriptor_sets.as_slice(),
             &[],
         );
     }

@@ -10,7 +10,7 @@ pub struct PipelineInfo {
     pub specialization_entries: Vec<vk::SpecializationMapEntry>,
 }
 
-impl std::default::Default for PipelineInfo {
+impl Default for PipelineInfo {
     fn default() -> Self {
         PipelineInfo {
             layout: vk::PipelineLayout::default(),

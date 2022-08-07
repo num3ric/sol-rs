@@ -456,7 +456,7 @@ impl Image2d {
     }
 }
 
-impl crate::Resource<vk::Image> for Image2d {
+impl Resource<vk::Image> for Image2d {
     fn handle(&self) -> vk::Image {
         self.image
     }
@@ -491,7 +491,7 @@ impl Texture2d {
         source_image = source_image.flipv();
         let size = source_image.dimensions();
         let image_data = source_image.to_rgba8().into_raw();
-        let mip_levels = ((::std::cmp::max(size.0, size.1) as f32).log2().floor() as u32) + 1;
+        let mip_levels = (max(size.0, size.1) as f32).log2().floor() as u32 + 1;
 
         let format = vk::Format::R8G8B8A8_UNORM;
         let image_info = vk::ImageCreateInfo::builder()

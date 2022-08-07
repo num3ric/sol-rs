@@ -253,7 +253,7 @@ impl Swapchain {
     }
 }
 
-impl crate::Resource<vk::SwapchainKHR> for Swapchain {
+impl Resource<vk::SwapchainKHR> for Swapchain {
     fn handle(&self) -> vk::SwapchainKHR {
         self.swapchain
     }

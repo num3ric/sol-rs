@@ -13,7 +13,7 @@ pub struct BufferInfo<'a> {
     pub index_type: Option<vk::IndexType>,
 }
 
-impl std::default::Default for BufferInfo<'_> {
+impl Default for BufferInfo<'_> {
     fn default() -> Self {
         BufferInfo {
             name: "Buffer",
@@ -141,7 +141,7 @@ impl Buffer {
         }
     }
 
-    pub fn from_data<T: std::marker::Copy>(
+    pub fn from_data<T: Copy>(
         context: Arc<Context>,
         info: BufferInfo,
         data: &[T],
@@ -282,7 +282,7 @@ impl Buffer {
     }
 }
 
-impl crate::Resource<vk::Buffer> for Buffer {
+impl Resource<vk::Buffer> for Buffer {
     fn handle(&self) -> vk::Buffer {
         self.handle
     }

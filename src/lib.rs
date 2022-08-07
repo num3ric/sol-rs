@@ -67,10 +67,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn build<T>(setup: crate::SetupFn<T>) -> AppBuilder<T> {
+    pub fn build<T>(setup: SetupFn<T>) -> AppBuilder<T> {
         AppBuilder {
             prepare: None,
-            setup: setup,
+            setup,
             update: None,
             window_event: None,
             render: None,
@@ -112,7 +112,7 @@ pub struct AppSettings {
     pub render: RendererSettings,
 }
 
-impl std::default::Default for AppSettings {
+impl Default for AppSettings {
     fn default() -> Self {
         AppSettings {
             name: "App".to_string(),

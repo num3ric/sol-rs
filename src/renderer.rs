@@ -29,7 +29,7 @@ pub struct RendererSettings {
     pub device_extensions: Vec<&'static CStr>,
 }
 
-impl std::default::Default for RendererSettings {
+impl Default for RendererSettings {
     fn default() -> Self {
         RendererSettings {
             samples: 1,
@@ -352,7 +352,7 @@ impl AppRenderer {
 
     pub fn begin_frame_default(
         &mut self,
-    ) -> Result<(ash::vk::Semaphore, ash::vk::CommandBuffer), AppRenderError> {
+    ) -> Result<(vk::Semaphore, vk::CommandBuffer), AppRenderError> {
         let (image_aquired_semaphore, _) = self.acquire_next_image()?;
         let cmd = self.begin_command_buffer();
         self.begin_renderpass(cmd, self.swapchain.get_extent());
@@ -361,8 +361,8 @@ impl AppRenderer {
 
     pub fn end_frame_default(
         &mut self,
-        image_aquired_semaphore: ash::vk::Semaphore,
-        cmd: ash::vk::CommandBuffer,
+        image_aquired_semaphore: vk::Semaphore,
+        cmd: vk::CommandBuffer,
     ) -> Result<(), AppRenderError> {
         self.end_renderpass(cmd);
         self.end_command_buffer(cmd);

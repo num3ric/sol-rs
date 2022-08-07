@@ -120,7 +120,7 @@ fn create_logical_device_with_graphics_queue(
         extension_properties
             .iter()
             .map(|ext| {
-                std::ffi::CStr::from_ptr(ext.extension_name.as_ptr() as *const c_char)
+                CStr::from_ptr(ext.extension_name.as_ptr() as *const c_char)
                     .to_string_lossy()
                     .as_ref()
                     .to_owned()
@@ -166,7 +166,7 @@ fn create_logical_device_with_graphics_queue(
 
     let ray_tracing_enabled = unsafe {
         ray_tracing_extensions.iter().all(|ext| {
-            let ext = std::ffi::CStr::from_ptr(*ext).to_string_lossy();
+            let ext = CStr::from_ptr(*ext).to_string_lossy();
 
             let supported = supported_extensions.contains(ext.as_ref());
 
@@ -425,7 +425,7 @@ impl SharedContext {
 impl Drop for SharedContext {
     fn drop(&mut self) {
         unsafe {
-            std::mem::ManuallyDrop::drop(&mut self.allocator); // Explicitly drop before destruction of device and instance.
+            ManuallyDrop::drop(&mut self.allocator); // Explicitly drop before destruction of device and instance.
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);
             self.device.destroy_device(None);

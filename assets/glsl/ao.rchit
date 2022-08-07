@@ -29,7 +29,7 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 projection;
     mat4 projection_inverse;
     mat4 model_view_projection;
-    vec3 frame;
+    uvec3 frame;
 } scene;
 
 layout(set = 1, binding = 2) uniform sampler2D blueNoise;

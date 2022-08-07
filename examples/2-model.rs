@@ -5,8 +5,8 @@ use sol::scene;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct SceneData {
-    mvp: glam::Mat4,
-    normal: glam::Mat4,
+    mvp: Mat4,
+    normal: Mat4,
 }
 
 pub struct PerFrameData {
@@ -107,9 +107,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
         .ubo
         .update(&[scene_data]);
     let pipeline_layout = data.pipeline_layout.handle();
-    let descriptor_set = data.per_frame[app.renderer.active_frame_index]
-        .desc_set
-        .handle();
+    let descriptor_sets = [data.per_frame[app.renderer.active_frame_index].desc_set.handle()];
     let device = app.renderer.context.device();
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
@@ -120,7 +118,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             vk::PipelineBindPoint::GRAPHICS,
             pipeline_layout,
             0,
-            &[descriptor_set],
+            descriptor_sets.as_slice(),
             &[],
         );
     }
@@ -134,7 +132,7 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             samples: 8,
-            clear_color: glam::Vec4::splat(0.15),
+            clear_color: Vec4::splat(0.15),
             ..Default::default()
         },
     }

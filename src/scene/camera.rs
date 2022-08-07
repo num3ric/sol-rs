@@ -70,7 +70,7 @@ impl Camera {
         camera
     }
 
-    pub fn from_view(view:glam::Mat4, yfov:f32, z_near:f32, z_far:f32) -> Self {
+    pub fn from_view(view:Mat4, yfov:f32, z_near:f32, z_far:f32) -> Self {
         let view_inverse = view.inverse();
         let position = view_inverse * vec4(0.0,0.0,0.0,1.0);
         let up = view_inverse * vec4(0.0,1.0,0.0,0.0);

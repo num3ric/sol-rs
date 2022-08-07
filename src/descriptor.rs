@@ -9,7 +9,7 @@ pub struct DescriptorSetInfo {
     pub acceleration_structures: HashMap<u32, Vec<vk::AccelerationStructureKHR>>,
 }
 
-impl std::default::Default for DescriptorSetInfo {
+impl Default for DescriptorSetInfo {
     fn default() -> Self {
         DescriptorSetInfo {
             buffer_infos: HashMap::new(),
@@ -170,7 +170,7 @@ pub struct DescriptorSetLayoutInfo {
     pub min_max_sets: u32,
 }
 
-impl std::default::Default for DescriptorSetLayoutInfo {
+impl Default for DescriptorSetLayoutInfo {
     fn default() -> Self {
         DescriptorSetLayoutInfo {
             bindings: HashMap::new(),
@@ -392,7 +392,7 @@ pub struct PipelineLayoutInfo {
     pub push_constant_ranges: Vec<vk::PushConstantRange>,
 }
 
-impl std::default::Default for PipelineLayoutInfo {
+impl Default for PipelineLayoutInfo {
     fn default() -> Self {
         PipelineLayoutInfo {
             flags: vk::PipelineLayoutCreateFlags::default(),
