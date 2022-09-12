@@ -13,11 +13,11 @@ struct SceneUniforms {
     projection: Mat4,
     projection_inverse: Mat4,
     model_view_projection: Mat4,
-    frame: [u32; 3],
+    frame: UVec3,
 }
 
 impl SceneUniforms {
-    pub fn from(camera: &scene::Camera, frame: [u32; 3]) -> SceneUniforms {
+    pub fn from(camera: &scene::Camera, frame: UVec3) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
             model: Mat4::IDENTITY,
@@ -171,7 +171,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     for _ in 0..app.renderer.get_frames_count() {
         let uniforms = SceneUniforms::from(
             &camera,
-            [app.window.get_width(), app.window.get_height(), 0u32],
+            uvec3(app.window.get_width(), app.window.get_height(), 0),
         );
         let ubo = sol::Buffer::from_data(
             context.clone(),
@@ -250,11 +250,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     let ref mut frame_ubo = data.per_frame[frame_index].ubo;
     frame_ubo.update(&[SceneUniforms::from(
         &data.manip.camera,
-        [
-            app.window.get_width(),
-            app.window.get_height(),
-            app.elapsed_ticks as u32,
-        ],
+        uvec3(app.window.get_width(), app.window.get_height(), app.elapsed_ticks as u32),
     )]);
 
     let cmd = app.renderer.begin_command_buffer();

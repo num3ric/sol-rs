@@ -13,11 +13,11 @@ struct SceneUniforms {
     projection: Mat4,
     projection_inverse: Mat4,
     model_view_projection: Mat4,
-    frame: Vec3A,
+    frame: UVec3,
 }
 
 impl SceneUniforms {
-    pub fn from(camera: &scene::Camera, frame: Vec3A) -> SceneUniforms {
+    pub fn from(camera: &scene::Camera, frame: UVec3) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
             model: Mat4::IDENTITY,
@@ -131,10 +131,10 @@ pub fn setup(app: &mut sol::App) -> AppData {
     for _ in 0..app.renderer.get_frames_count() {
         let uniforms = SceneUniforms::from(
             &camera,
-            vec3a(
-                app.window.get_width() as f32,
-                app.window.get_height() as f32,
-                0f32,
+            uvec3(
+                app.window.get_width(),
+                app.window.get_height(),
+                0,
             ),
         );
         let ubo = sol::Buffer::from_data(
@@ -197,10 +197,10 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     let ref mut frame_ubo = data.per_frame[frame_index].ubo;
     frame_ubo.update(&[SceneUniforms::from(
         &data.manip.camera,
-        vec3a(
-            app.window.get_width() as f32,
-            app.window.get_height() as f32,
-            app.elapsed_ticks as f32,
+        uvec3(
+            app.window.get_width(),
+            app.window.get_height(),
+            app.elapsed_ticks as u32,
         ),
     )]);
 
@@ -225,7 +225,6 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     );
 
     let device = app.renderer.context.device();
-    let descriptor_sets = [desc_scene, desc_pass.handle()];
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
@@ -239,7 +238,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
-            descriptor_sets.as_slice(),
+            &[desc_scene, desc_pass.handle()],
             &[],
         );
     }
