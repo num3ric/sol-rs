@@ -264,7 +264,6 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
                 vk::Format::R8G8B8A8_UNORM,
             );
             data.accumulation_start_frame = app.elapsed_ticks as u32;
-            data.layout_scene.reset_pool();
             data.layout_pass.reset_pool();
         }
         WindowEvent::KeyboardInput { input, .. } => {

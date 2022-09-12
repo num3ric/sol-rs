@@ -184,7 +184,6 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
     match event {
         WindowEvent::Resized(_) => {
             data.image_target = create_image_target(&app.renderer.context, &app.window);
-            data.layout_scene.reset_pool();
             data.layout_pass.reset_pool();
         }
         _ => {}

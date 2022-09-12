@@ -227,7 +227,6 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
         WindowEvent::Resized(_) => {
             data.render_target = create_image_target(&app.renderer.context, &app.window);
             data.accumulation_start_frame = app.elapsed_ticks as u32;
-            data.layout_scene.reset_pool();
             data.layout_pass.reset_pool();
         }
         _ => {}
