@@ -7,20 +7,20 @@ use winit::event::WindowEvent;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 struct SceneUniforms {
-    model: glam::Mat4,
-    view: glam::Mat4,
-    view_inverse: glam::Mat4,
-    projection: glam::Mat4,
-    projection_inverse: glam::Mat4,
-    model_view_projection: glam::Mat4,
-    frame: glam::Vec3A,
+    model: Mat4,
+    view: Mat4,
+    view_inverse: Mat4,
+    projection: Mat4,
+    projection_inverse: Mat4,
+    model_view_projection: Mat4,
+    frame: UVec3,
 }
 
 impl SceneUniforms {
-    pub fn from(camera: &scene::Camera, frame: glam::Vec3A) -> SceneUniforms {
+    pub fn from(camera: &scene::Camera, frame: UVec3) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::IDENTITY,
+            model: Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),
@@ -65,6 +65,7 @@ fn create_image_target(context: &Arc<sol::Context>, window: &sol::Window) -> sol
         &image_info,
         vk::ImageAspectFlags::COLOR,
         1,
+        "TargetRT"
     )
 }
 
@@ -92,13 +93,13 @@ pub fn setup(app: &mut sol::App) -> AppData {
         sol::DescriptorSetLayoutInfo::default()
             .binding(
                 0,
-                vk::DescriptorType::ACCELERATION_STRUCTURE_NV,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::DescriptorType::ACCELERATION_STRUCTURE_KHR,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 1,
                 vk::DescriptorType::STORAGE_IMAGE,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             ),
     );
 
@@ -114,15 +115,15 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .layout(pipeline_layout.handle())
             .shader(
                 sol::util::find_asset("glsl/debug.rgen").unwrap(),
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/debug.rmiss").unwrap(),
-                vk::ShaderStageFlags::MISS_NV,
+                vk::ShaderStageFlags::MISS_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/debug.rchit").unwrap(),
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             )
             .name("debug_mat".to_string()),
     );
@@ -130,10 +131,10 @@ pub fn setup(app: &mut sol::App) -> AppData {
     for _ in 0..app.renderer.get_frames_count() {
         let uniforms = SceneUniforms::from(
             &camera,
-            vec3a(
-                app.window.get_width() as f32,
-                app.window.get_height() as f32,
-                0f32,
+            uvec3(
+                app.window.get_width(),
+                app.window.get_height(),
+                0,
             ),
         );
         let ubo = sol::Buffer::from_data(
@@ -150,14 +151,14 @@ pub fn setup(app: &mut sol::App) -> AppData {
 
     let scene_description = ray::SceneDescription::from_scene(context.clone(), &scene);
 
-    let mut sbt = ray::ShaderBindingTable::new(
+    let sbt = ray::ShaderBindingTable::new(
         context.clone(),
+        pipeline.handle(),
         ray::ShaderBindingTableInfo::default()
             .raygen(0)
             .miss(1)
             .hitgroup(2),
     );
-    sbt.generate(pipeline.handle());
 
     let image_target = create_image_target(&context, &app.window);
 
@@ -183,7 +184,6 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
     match event {
         WindowEvent::Resized(_) => {
             data.image_target = create_image_target(&app.renderer.context, &app.window);
-            data.layout_scene.reset_pool();
             data.layout_pass.reset_pool();
         }
         _ => {}
@@ -196,10 +196,10 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     let ref mut frame_ubo = data.per_frame[frame_index].ubo;
     frame_ubo.update(&[SceneUniforms::from(
         &data.manip.camera,
-        vec3a(
-            app.window.get_width() as f32,
-            app.window.get_height() as f32,
-            app.elapsed_ticks as f32,
+        uvec3(
+            app.window.get_width(),
+            app.window.get_height(),
+            app.elapsed_ticks as u32,
         ),
     )]);
 
@@ -229,12 +229,12 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
         device.cmd_bind_pipeline(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline.handle(),
         );
         device.cmd_bind_descriptor_sets(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
             &[desc_scene, desc_pass.handle()],
@@ -260,9 +260,6 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
-            device_extensions: vec![
-                ash::extensions::nv::RayTracing::name(),
-            ],
             ..Default::default()
         },
     }

@@ -11,7 +11,7 @@ use ash::vk;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::{Context, Resource, Vertex};
+use crate::{Context, Vertex};
 
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
@@ -79,21 +79,23 @@ impl SceneDescription {
             for primitive in &mesh.primitive_sections {
                 let mut geo_intances = Vec::<GeometryInstance>::new();
                 let mut instance_indices = Vec::<usize>::new();
-                let (index_buffer, index_count, index_offset) = match &mesh.index_buffer {
+                
+                let (index_buffer, index_count, index_offset_size) = match &mesh.index_buffer {
                     Some(buffer) => (
-                        Some(buffer.handle()),
+                        Some(buffer.get_device_address()),
                         Some(primitive.get_index_count()),
                         Some(primitive.get_index_offset_size::<u32>()),
                     ),
                     None => (None, None, None),
                 };
                 geo_intances.push(GeometryInstance {
-                    vertex_buffer: mesh.vertex_buffer.handle(),
+                    vertex_buffer: mesh.vertex_buffer.get_device_address(),
                     vertex_count: primitive.get_vertex_count(),
-                    vertex_offset: primitive.get_vertex_offset_size(),
+                    vertex_offset_size: primitive.get_vertex_offset_size(),
+                    vertex_offset: primitive.get_vertex_offset(),
                     index_buffer,
                     index_count,
-                    index_offset,
+                    index_offset_size,
                     transform: glam::Mat4::IDENTITY, //TODO: Does this work??
                 });
 
@@ -175,7 +177,7 @@ impl SceneDescription {
 
     pub fn tlas_regenerate(&mut self, cmd: vk::CommandBuffer) {
         self.tlas
-            .generate(cmd, &self.blas, self.tlas.handle(), true);
+            .regenerate(cmd, &self.blas);
     }
 
     pub fn blas(&self) -> &Vec<BLAS> {

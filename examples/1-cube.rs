@@ -26,7 +26,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .gpu_only(),
         &util::colored_cube_vertices(),
     );
-    let texture = sol::Texture2d::new(context.clone(), sol::util::find_asset("textures/face.png").unwrap());
+    let texture = sol::Texture2d::new(context.clone(), util::find_asset("textures/face.png").unwrap());
 
     let mut desc_set_layout = sol::DescriptorSetLayout::new(
         context.clone(),
@@ -51,8 +51,8 @@ pub fn setup(app: &mut sol::App) -> AppData {
         sol::PipelineInfo::default()
             .layout(pipeline_layout.handle())
             .render_pass_info(app.renderer.swapchain.get_transient_render_pass_info())
-            .vert(sol::util::find_asset("glsl/cube.vert").unwrap())
-            .frag(sol::util::find_asset("glsl/cube.frag").unwrap())
+            .vert(util::find_asset("glsl/cube.vert").unwrap())
+            .frag(util::find_asset("glsl/cube.frag").unwrap())
             .vertex_type::<util::BasicVertex>(),
     );
 
@@ -102,6 +102,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     data.per_frame[app.renderer.active_frame_index]
         .ubo
         .update(&vp.to_cols_array());
+    let descriptor_sets = [data.per_frame[app.renderer.active_frame_index].desc_set.handle()];
     let device = app.renderer.context.device();
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
@@ -112,9 +113,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             vk::PipelineBindPoint::GRAPHICS,
             data.pipeline_layout.handle(),
             0,
-            &[data.per_frame[app.renderer.active_frame_index]
-                .desc_set
-                .handle()],
+            descriptor_sets.as_slice(),
             &[],
         );
         device.cmd_bind_vertex_buffers(cmd, 0, &[data.vertex_buffer.handle()], &[0]);
@@ -129,7 +128,7 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [900, 600],
         render: sol::RendererSettings {
             samples: 8,
-            clear_color: glam::vec4(13.0 / 255.0, 17.0 / 255.0, 23.0 / 255.0, 1.0),
+            clear_color: vec4(13.0 / 255.0, 17.0 / 255.0, 23.0 / 255.0, 1.0),
             ..Default::default()
         },
     }

@@ -1,12 +1,17 @@
 use crate::*;
 use ash::{
-    extensions::{ext::DebugUtils, khr::Surface, nv::RayTracing},
+    extensions::{ext::DebugUtils, khr},
     vk, Device, Entry, Instance,
 };
-use vk_mem::AllocatorCreateFlags;
+use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 use std::borrow::Cow;
+use std::mem::ManuallyDrop;
 use std::ffi::{CStr, CString};
-use std::sync::Arc;
+use std::{
+    collections::{HashSet},
+    os::raw::c_char
+};
+use std::sync::{Arc, Mutex};
 
 unsafe extern "system" fn vulkan_debug_callback(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -43,7 +48,7 @@ unsafe extern "system" fn vulkan_debug_callback(
 
 fn find_queue_families(
     instance: &Instance,
-    surface: &Surface,
+    surface: &khr::Surface,
     surface_khr: vk::SurfaceKHR,
     device: vk::PhysicalDevice,
 ) -> (Option<u32>, Option<u32>) {
@@ -108,7 +113,76 @@ fn create_logical_device_with_graphics_queue(
             .collect::<Vec<_>>()
     };
 
-    let mut device_extensions_ptrs = vec![ash::extensions::khr::Swapchain::name().as_ptr()];
+    let supported_extensions: HashSet<String> = unsafe {
+        let extension_properties = instance
+            .enumerate_device_extension_properties(device).unwrap();
+        //dbg!("Extension properties:\n{:#?}", &extension_properties);
+        extension_properties
+            .iter()
+            .map(|ext| {
+                CStr::from_ptr(ext.extension_name.as_ptr() as *const c_char)
+                    .to_string_lossy()
+                    .as_ref()
+                    .to_owned()
+            })
+            .collect()
+    };
+
+    let mut device_extensions_ptrs = vec![
+        vk::ExtDescriptorIndexingFn::name().as_ptr(),
+        vk::ExtScalarBlockLayoutFn::name().as_ptr(),
+        vk::KhrMaintenance1Fn::name().as_ptr(),
+        vk::KhrMaintenance2Fn::name().as_ptr(),
+        vk::KhrMaintenance3Fn::name().as_ptr(),
+        vk::KhrGetMemoryRequirements2Fn::name().as_ptr(),
+        vk::KhrImagelessFramebufferFn::name().as_ptr(),
+        vk::KhrImageFormatListFn::name().as_ptr(),
+        vk::KhrDescriptorUpdateTemplateFn::name().as_ptr(),
+        // Rust-GPU
+        vk::KhrShaderFloat16Int8Fn::name().as_ptr(),
+        // DLSS
+        #[cfg(feature = "dlss")]
+        {
+            b"VK_NVX_binary_import\0".as_ptr() as *const i8
+        },
+        #[cfg(feature = "dlss")]
+        {
+            b"VK_KHR_push_descriptor\0".as_ptr() as *const i8
+        },
+        #[cfg(feature = "dlss")]
+        vk::NvxImageViewHandleFn::name().as_ptr(),
+    ];
+
+    device_extensions_ptrs.push(ash::extensions::khr::Swapchain::name().as_ptr());
+
+    let ray_tracing_extensions = [
+        vk::KhrVulkanMemoryModelFn::name().as_ptr(), // used in ray tracing shaders
+        vk::KhrPipelineLibraryFn::name().as_ptr(),   // rt dep
+        vk::KhrDeferredHostOperationsFn::name().as_ptr(), // rt dep
+        vk::KhrBufferDeviceAddressFn::name().as_ptr(), // rt dep
+        vk::KhrAccelerationStructureFn::name().as_ptr(),
+        vk::KhrRayTracingPipelineFn::name().as_ptr(),
+    ];
+
+    let ray_tracing_enabled = unsafe {
+        ray_tracing_extensions.iter().all(|ext| {
+            let ext = CStr::from_ptr(*ext).to_string_lossy();
+
+            let supported = supported_extensions.contains(ext.as_ref());
+
+            if !supported {
+                dbg!("Ray tracing extension not supported: {}", ext);
+            }
+
+            supported
+        })
+    };
+
+    if ray_tracing_enabled {
+        dbg!("All ray tracing extensions are supported");
+        device_extensions_ptrs.extend(ray_tracing_extensions.iter());
+    }
+
     for ext in device_extensions {
         device_extensions_ptrs.push((*ext).as_ptr());
     }
@@ -152,11 +226,13 @@ pub struct SharedContext {
     debug_call_back: vk::DebugUtilsMessengerEXT,
     device: Device,
     pdevice: vk::PhysicalDevice,
-    allocator: vk_mem::Allocator,
+    allocator: ManuallyDrop<Arc<Mutex<Allocator>>>,
     pub queue_family_indices: QueueFamiliesIndices,
     graphics_queue: vk::Queue,
     present_queue: vk::Queue,
-    pub ray_tracing: RayTracing,
+    pub acceleration_structure: khr::AccelerationStructure,
+    pub ray_tracing: khr::RayTracingPipeline,
+    pub ray_tracing_properties: vk::PhysicalDeviceRayTracingPipelinePropertiesKHR,
 }
 
 impl SharedContext {
@@ -168,6 +244,7 @@ impl SharedContext {
             let mut layer_names = Vec::<CString>::new();
             if cfg!(debug_assertions) {
                 layer_names.push(CString::new("VK_LAYER_KHRONOS_validation").unwrap());
+                //layer_names.push(CString::new("VK_LAYER_LUNARG_api_dump").unwrap());
             }
             let layers_names_raw: Vec<*const i8> = layer_names
                 .iter()
@@ -191,7 +268,7 @@ impl SharedContext {
                 .application_version(0)
                 .engine_name(&app_name)
                 .engine_version(0)
-                .api_version(vk::API_VERSION_1_1);
+                .api_version(vk::API_VERSION_1_2);
 
             let create_info = vk::InstanceCreateInfo::builder()
                 .application_info(&appinfo)
@@ -262,19 +339,17 @@ impl SharedContext {
                 &settings.device_extensions,
             );
 
-            let alloc_create_info = vk_mem::AllocatorCreateInfo {
-                physical_device: pdevice,
-                device: device.clone(),
+            let allocator = Allocator::new(&AllocatorCreateDesc{
                 instance: instance.clone(),
-                flags: AllocatorCreateFlags::default(),
-                preferred_large_heap_block_size: 0,
-                frame_in_use_count: 0,
-                heap_size_limits: None,
-                allocation_callbacks: None,
-                vulkan_api_version: 0,
-            };
-            let allocator = vk_mem::Allocator::new(&alloc_create_info).unwrap();
-            let ray_tracing = RayTracing::new(&instance, &device);
+                device: device.clone(),
+                physical_device: pdevice,
+                debug_settings: Default::default(),
+                buffer_device_address: true,  // TODO: check the BufferDeviceAddressFeatures struct.
+            }).unwrap();
+
+            let acceleration_structure = khr::AccelerationStructure::new(&instance, &device);
+            let ray_tracing = khr::RayTracingPipeline::new(&instance, &device);
+            let ray_tracing_properties = khr::RayTracingPipeline::get_properties(&instance, pdevice);
 
             SharedContext {
                 entry,
@@ -283,11 +358,13 @@ impl SharedContext {
                 debug_call_back,
                 device,
                 pdevice,
-                allocator,
+                allocator: ManuallyDrop::new(Arc::new(Mutex::new(allocator))),
                 queue_family_indices,
                 graphics_queue,
                 present_queue,
+                acceleration_structure,
                 ray_tracing,
+                ray_tracing_properties,
             }
         }
     }
@@ -324,16 +401,20 @@ impl SharedContext {
         self.present_queue
     }
 
-    pub fn allocator(&self) -> &vk_mem::Allocator {
+    pub fn allocator(&self) -> &Arc<Mutex<Allocator>> {
         &self.allocator
     }
 
-    pub fn ray_tracing(&self) -> &RayTracing {
+    pub fn acceleration_structure(&self) -> &khr::AccelerationStructure {
+        &self.acceleration_structure
+    }
+
+    pub fn ray_tracing(&self) -> &khr::RayTracingPipeline {
         &self.ray_tracing
     }
 
-    pub unsafe fn ray_tracing_properties(&self) -> vk::PhysicalDeviceRayTracingPropertiesNV {
-        RayTracing::get_properties(&self.instance, self.pdevice)
+    pub unsafe fn ray_tracing_properties(&self) -> &vk::PhysicalDeviceRayTracingPipelinePropertiesKHR {
+        &self.ray_tracing_properties
     }
 
     pub fn queue_family_indices(&self) -> &QueueFamiliesIndices {
@@ -344,7 +425,7 @@ impl SharedContext {
 impl Drop for SharedContext {
     fn drop(&mut self) {
         unsafe {
-            self.allocator.destroy();
+            ManuallyDrop::drop(&mut self.allocator); // Explicitly drop before destruction of device and instance.
             self.debug_utils_loader
                 .destroy_debug_utils_messenger(self.debug_call_back, None);
             self.device.destroy_device(None);
@@ -415,15 +496,19 @@ impl Context {
         self.shared_context.graphics_queue()
     }
 
-    pub fn allocator(&self) -> &vk_mem::Allocator {
+    pub fn allocator(&self) -> &Arc<Mutex<Allocator>> {
         self.shared_context.allocator()
     }
 
-    pub fn ray_tracing(&self) -> &RayTracing {
+    pub fn acceleration_structure(&self) -> &khr::AccelerationStructure {
+        self.shared_context.acceleration_structure()
+    }
+
+    pub fn ray_tracing(&self) -> &khr::RayTracingPipeline {
         self.shared_context.ray_tracing()
     }
 
-    pub unsafe fn ray_tracing_properties(&self) -> vk::PhysicalDeviceRayTracingPropertiesNV {
+    pub unsafe fn ray_tracing_properties(&self) -> &vk::PhysicalDeviceRayTracingPipelinePropertiesKHR {
         self.shared_context.ray_tracing_properties()
     }
 

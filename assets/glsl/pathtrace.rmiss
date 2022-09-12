@@ -1,14 +1,14 @@
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #include "payload.glsl"
 
 layout (constant_id = 0) const int ENABLE_SKYLIGHT = 0;
-layout(location = 0) rayPayloadInNV Payload prd;
+layout(location = 0) rayPayloadInEXT Payload prd;
 
 void main()
 {
     if( bool(ENABLE_SKYLIGHT) ) {
-        vec3 wI = normalize( gl_WorldRayDirectionNV );
+        vec3 wI = normalize( gl_WorldRayDirectionEXT );
 	    float t = smoothstep(0.35, 0.65, 0.5*(wI.y + 1));
 	    vec3 skyColor = mix(vec3(0.58,0.45,0.25), vec3(0.3, 0.4, 0.5), t);
         bool isSun = dot(wI, normalize(vec3(0.0,1.0,-0.25))) > 0.99;

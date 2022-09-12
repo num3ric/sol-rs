@@ -6,10 +6,10 @@ use std::sync::Arc;
 pub struct DescriptorSetInfo {
     pub buffer_infos: HashMap<u32, Vec<vk::DescriptorBufferInfo>>,
     pub image_infos: HashMap<u32, Vec<vk::DescriptorImageInfo>>,
-    pub acceleration_structures: HashMap<u32, Vec<vk::AccelerationStructureNV>>,
+    pub acceleration_structures: HashMap<u32, Vec<vk::AccelerationStructureKHR>>,
 }
 
-impl std::default::Default for DescriptorSetInfo {
+impl Default for DescriptorSetInfo {
     fn default() -> Self {
         DescriptorSetInfo {
             buffer_infos: HashMap::new(),
@@ -106,7 +106,7 @@ impl DescriptorSetInfo {
         self
     }
 
-    pub fn accel_struct(mut self, binding: u32, accel_struct: vk::AccelerationStructureNV) -> Self {
+    pub fn accel_struct(mut self, binding: u32, accel_struct: vk::AccelerationStructureKHR) -> Self {
         self.acceleration_structures
             .insert(binding, vec![accel_struct]);
         self
@@ -114,7 +114,7 @@ impl DescriptorSetInfo {
     pub fn accel_structs(
         mut self,
         binding: u32,
-        accel_structs: Vec<vk::AccelerationStructureNV>,
+        accel_structs: Vec<vk::AccelerationStructureKHR>,
     ) -> Self {
         self.acceleration_structures.insert(binding, accel_structs);
         self
@@ -170,7 +170,7 @@ pub struct DescriptorSetLayoutInfo {
     pub min_max_sets: u32,
 }
 
-impl std::default::Default for DescriptorSetLayoutInfo {
+impl Default for DescriptorSetLayoutInfo {
     fn default() -> Self {
         DescriptorSetLayoutInfo {
             bindings: HashMap::new(),
@@ -334,7 +334,7 @@ impl DescriptorSetLayout {
         }
 
         for (binding, accel_structs) in &info.acceleration_structures {
-            let mut accel_info = vk::WriteDescriptorSetAccelerationStructureNV::builder()
+            let mut accel_info = vk::WriteDescriptorSetAccelerationStructureKHR::builder()
                 .acceleration_structures(&accel_structs)
                 .build();
             let mut accel_write = vk::WriteDescriptorSet::builder()
@@ -392,7 +392,7 @@ pub struct PipelineLayoutInfo {
     pub push_constant_ranges: Vec<vk::PushConstantRange>,
 }
 
-impl std::default::Default for PipelineLayoutInfo {
+impl Default for PipelineLayoutInfo {
     fn default() -> Self {
         PipelineLayoutInfo {
             flags: vk::PipelineLayoutCreateFlags::default(),

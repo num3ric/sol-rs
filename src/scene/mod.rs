@@ -73,6 +73,10 @@ impl PrimitiveSection {
         self.vertices.element_count as u32
     }
 
+    pub fn get_vertex_offset(&self) -> u32 {
+        self.vertices.offset as u32
+    }
+
     pub fn get_vertex_offset_size(&self) -> vk::DeviceSize {
         let size = std::mem::size_of::<ModelVertex>() as u64;
         self.vertices.offset as u64 * size

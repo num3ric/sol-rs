@@ -67,10 +67,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn build<T>(setup: crate::SetupFn<T>) -> AppBuilder<T> {
+    pub fn build<T>(setup: SetupFn<T>) -> AppBuilder<T> {
         AppBuilder {
             prepare: None,
-            setup: setup,
+            setup,
             update: None,
             window_event: None,
             render: None,
@@ -99,15 +99,6 @@ impl App {
     }
 }
 
-impl Drop for App {
-    fn drop(&mut self) {
-        unsafe {
-            std::mem::ManuallyDrop::drop(&mut self.renderer.swapchain);
-            self.window.destroy_surface();
-        }
-    }
-}
-
 pub type PrepareFn = fn() -> AppSettings;
 pub type SetupFn<T> = fn(&mut App) -> T; // TODO: how do we specify FnOnce here?
 pub type UpdateFn<T> = fn(&mut App, &mut T);
@@ -121,7 +112,7 @@ pub struct AppSettings {
     pub render: RendererSettings,
 }
 
-impl std::default::Default for AppSettings {
+impl Default for AppSettings {
     fn default() -> Self {
         AppSettings {
             name: "App".to_string(),

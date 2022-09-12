@@ -13,7 +13,7 @@ pub struct ModelVertex {
     pub uv: glam::Vec4,
 }
 
-impl std::default::Default for ModelVertex {
+impl Default for ModelVertex {
     fn default() -> Self {
         ModelVertex {
             pos: glam::vec4(0f32, 0.0, 0.0, 1.0),
@@ -28,7 +28,7 @@ impl Vertex for ModelVertex {
     fn stride() -> u32 {
         std::mem::size_of::<ModelVertex>() as u32
     }
-    fn format_offset() -> Vec<(ash::vk::Format, u32)> {
+    fn format_offset() -> Vec<(vk::Format, u32)> {
         vec![
             (
                 vk::Format::R32G32B32A32_SFLOAT,

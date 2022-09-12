@@ -1,5 +1,5 @@
 use crate::*;
-use ash::{vk};
+use ash::vk;
 use std::sync::Arc;
 use std::{ffi::CStr, mem::ManuallyDrop};
 
@@ -29,7 +29,7 @@ pub struct RendererSettings {
     pub device_extensions: Vec<&'static CStr>,
 }
 
-impl std::default::Default for RendererSettings {
+impl Default for RendererSettings {
     fn default() -> Self {
         RendererSettings {
             samples: 1,
@@ -135,14 +135,8 @@ impl AppRenderer {
     pub fn recreate_swapchain(&mut self, window: &Window) {
         unsafe {
             self.context.device().device_wait_idle().unwrap();
-            ManuallyDrop::drop(&mut self.swapchain);
         }
-        self.swapchain = ManuallyDrop::new(Swapchain::new(
-            self.context.shared().clone(),
-            window,
-            &self.settings,
-        ));
-        self.swapchain.transition_depth_images(&self.context);
+
         for framebuffer in self.framebuffers.iter() {
             unsafe {
                 self.context
@@ -150,6 +144,18 @@ impl AppRenderer {
                     .destroy_framebuffer(*framebuffer, None);
             }
         }
+
+        unsafe {
+            ManuallyDrop::drop(&mut self.swapchain);
+        }
+        
+        self.swapchain = ManuallyDrop::new(Swapchain::new(
+            self.context.shared().clone(),
+            window,
+            &self.settings,
+        ));
+        self.swapchain.transition_depth_images(&self.context);
+
         self.framebuffers = self
             .swapchain
             .create_framebuffers(&self.renderpass, &window);
@@ -346,7 +352,7 @@ impl AppRenderer {
 
     pub fn begin_frame_default(
         &mut self,
-    ) -> Result<(ash::vk::Semaphore, ash::vk::CommandBuffer), AppRenderError> {
+    ) -> Result<(vk::Semaphore, vk::CommandBuffer), AppRenderError> {
         let (image_aquired_semaphore, _) = self.acquire_next_image()?;
         let cmd = self.begin_command_buffer();
         self.begin_renderpass(cmd, self.swapchain.get_extent());
@@ -355,8 +361,8 @@ impl AppRenderer {
 
     pub fn end_frame_default(
         &mut self,
-        image_aquired_semaphore: ash::vk::Semaphore,
-        cmd: ash::vk::CommandBuffer,
+        image_aquired_semaphore: vk::Semaphore,
+        cmd: vk::CommandBuffer,
     ) -> Result<(), AppRenderError> {
         self.end_renderpass(cmd);
         self.end_command_buffer(cmd);
@@ -390,6 +396,8 @@ impl Drop for AppRenderer {
             self.frames.iter().for_each(|fence| {
                 device.destroy_fence(fence.in_flight_fence, None);
             });
+
+            ManuallyDrop::drop(&mut self.swapchain);
         }
     }
 }

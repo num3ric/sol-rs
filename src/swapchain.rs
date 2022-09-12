@@ -98,6 +98,7 @@ impl Swapchain {
                         &depth_image_create_info,
                         vk::ImageAspectFlags::DEPTH,
                         1,
+                        "SwapchainDepthStencil"
                     ));
                 }
             }
@@ -123,6 +124,7 @@ impl Swapchain {
                         &image_create_info,
                         vk::ImageAspectFlags::COLOR,
                         1,
+                        "SwapchainResolve"
                     ));
                 }
             }
@@ -251,7 +253,7 @@ impl Swapchain {
     }
 }
 
-impl crate::Resource<vk::SwapchainKHR> for Swapchain {
+impl Resource<vk::SwapchainKHR> for Swapchain {
     fn handle(&self) -> vk::SwapchainKHR {
         self.swapchain
     }
@@ -260,10 +262,8 @@ impl crate::Resource<vk::SwapchainKHR> for Swapchain {
 impl Drop for Swapchain {
     fn drop(&mut self) {
         unsafe {
-            self.present_images.clear();
             // Since images are created by the swapchain, this automatically destroys them as well.
-            self.swapchain_loader
-                .destroy_swapchain(self.swapchain, None);
+            self.swapchain_loader.destroy_swapchain(self.swapchain, None);
         }
     }
 }

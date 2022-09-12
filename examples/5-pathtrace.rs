@@ -7,20 +7,20 @@ use winit::event::WindowEvent;
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 struct SceneUniforms {
-    model: glam::Mat4,
-    view: glam::Mat4,
-    view_inverse: glam::Mat4,
-    projection: glam::Mat4,
-    projection_inverse: glam::Mat4,
-    model_view_projection: glam::Mat4,
-    frame: [u32; 3],
+    model: Mat4,
+    view: Mat4,
+    view_inverse: Mat4,
+    projection: Mat4,
+    projection_inverse: Mat4,
+    model_view_projection: Mat4,
+    frame: UVec3,
 }
 
 impl SceneUniforms {
-    pub fn from(camera: &scene::Camera, frame: [u32; 3]) -> SceneUniforms {
+    pub fn from(camera: &scene::Camera, frame: UVec3) -> SceneUniforms {
         let vp = camera.perspective_matrix() * camera.view_matrix();
         SceneUniforms {
-            model: glam::Mat4::IDENTITY,
+            model: Mat4::IDENTITY,
             view: camera.view_matrix(),
             view_inverse: camera.view_matrix().inverse(),
             projection: camera.perspective_matrix(),
@@ -75,6 +75,7 @@ fn create_image_target(
         &image_info,
         vk::ImageAspectFlags::COLOR,
         1,
+        "TargetRT"
     )
 }
 
@@ -89,27 +90,27 @@ fn build_pipeline_sbt(
             .layout(pipeline_layout.handle())
             .shader(
                 sol::util::find_asset("glsl/pathtrace.rgen").unwrap(),
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/pathtrace.rmiss").unwrap(),
-                vk::ShaderStageFlags::MISS_NV,
+                vk::ShaderStageFlags::MISS_KHR,
             )
             .shader(
                 sol::util::find_asset("glsl/pathtrace.rchit").unwrap(),
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             )
             .specialization(&[enable_sky as u32], 0)
             .name("AO_mat".to_string()),
     );
-    let mut sbt = ray::ShaderBindingTable::new(
+    let sbt = ray::ShaderBindingTable::new(
         context.clone(),
+        pipeline.handle(),
         ray::ShaderBindingTableInfo::default()
             .raygen(0)
             .miss(1)
             .hitgroup(2),
     );
-    sbt.generate(pipeline.handle());
 
     (pipeline, sbt)
 }
@@ -149,40 +150,40 @@ pub fn setup(app: &mut sol::App) -> AppData {
         sol::DescriptorSetLayoutInfo::default()
             .binding(
                 0,
-                vk::DescriptorType::ACCELERATION_STRUCTURE_NV,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::DescriptorType::ACCELERATION_STRUCTURE_KHR,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 1,
                 vk::DescriptorType::STORAGE_IMAGE,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 2,
                 vk::DescriptorType::STORAGE_IMAGE,
-                vk::ShaderStageFlags::RAYGEN_NV,
+                vk::ShaderStageFlags::RAYGEN_KHR,
             )
             .binding(
                 3,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             )
             .bindings(
                 4,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
                 instance_count,
             )
             .bindings(
                 5,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
                 instance_count,
             )
             .bindings(
                 6,
                 vk::DescriptorType::STORAGE_BUFFER,
-                vk::ShaderStageFlags::CLOSEST_HIT_NV,
+                vk::ShaderStageFlags::CLOSEST_HIT_KHR,
                 instance_count,
             ),
     );
@@ -190,7 +191,7 @@ pub fn setup(app: &mut sol::App) -> AppData {
     for _ in 0..app.renderer.get_frames_count() {
         let uniforms = SceneUniforms::from(
             &camera,
-            [app.window.get_width(), app.window.get_height(), 0u32],
+            uvec3(app.window.get_width(), app.window.get_height(), 0),
         );
         let ubo = sol::Buffer::from_data(
             context.clone(),
@@ -210,8 +211,8 @@ pub fn setup(app: &mut sol::App) -> AppData {
             .desc_set_layouts(&[layout_scene.handle(), layout_pass.handle()])
             .push_constant_range(
                 vk::PushConstantRange::builder()
-                    .stage_flags(vk::ShaderStageFlags::RAYGEN_NV)
-                    .size(std::mem::size_of::<u32>() as u32)
+                    .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
+                    .size(size_of::<u32>() as u32)
                     .build(),
             ),
     );
@@ -263,7 +264,6 @@ pub fn window_event(app: &mut sol::App, data: &mut AppData, event: &WindowEvent)
                 vk::Format::R8G8B8A8_UNORM,
             );
             data.accumulation_start_frame = app.elapsed_ticks as u32;
-            data.layout_scene.reset_pool();
             data.layout_pass.reset_pool();
         }
         WindowEvent::KeyboardInput { input, .. } => {
@@ -297,11 +297,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
     let ref mut frame_ubo = data.per_frame[frame_index].ubo;
     frame_ubo.update(&[SceneUniforms::from(
         &data.manip.camera,
-        [
-            app.window.get_width(),
-            app.window.get_height(),
-            app.elapsed_ticks as u32,
-        ],
+        uvec3(app.window.get_width(), app.window.get_height(), app.elapsed_ticks as u32)
     )]);
 
     let cmd = app.renderer.begin_command_buffer();
@@ -311,7 +307,7 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
         device.cmd_push_constants(
             cmd,
             data.pipeline_layout.handle(),
-            vk::ShaderStageFlags::RAYGEN_NV,
+            vk::ShaderStageFlags::RAYGEN_KHR,
             0,
             &data.accumulation_start_frame.to_ne_bytes(),
         )
@@ -341,21 +337,21 @@ pub fn render(app: &mut sol::App, data: &mut AppData) -> Result<(), sol::AppRend
             .buffers(6, data.scene_description.get_material_descriptors().clone()),
     );
 
-    let desc_scene = data.per_frame[frame_index].desc_set.handle();
+    let descriptor_sets = [data.per_frame[frame_index].desc_set.handle(), desc_pass.handle()];
     unsafe {
         device.cmd_set_scissor(cmd, 0, &[app.window.get_rect()]);
         device.cmd_set_viewport(cmd, 0, &[app.window.get_viewport()]);
         device.cmd_bind_pipeline(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline.handle(),
         );
         device.cmd_bind_descriptor_sets(
             cmd,
-            vk::PipelineBindPoint::RAY_TRACING_NV,
+            vk::PipelineBindPoint::RAY_TRACING_KHR,
             data.pipeline_layout.handle(),
             0,
-            &[desc_scene, desc_pass.handle()],
+            descriptor_sets.as_slice(),
             &[],
         );
     }
@@ -378,15 +374,6 @@ pub fn prepare() -> sol::AppSettings {
         resolution: [1280, 720],
         render: sol::RendererSettings {
             extensions: vec![vk::KhrGetPhysicalDeviceProperties2Fn::name()],
-            device_extensions: vec![
-                ash::extensions::nv::RayTracing::name(),
-                // vk::KhrDedicatedAllocationFn::name(),
-                // vk::ExtDescriptorIndexingFn::name(),
-                // vk::ExtScalarBlockLayoutFn::name(),
-                // vk::KhrRelaxedBlockLayoutFn::name(),
-                // vk::KhrGetMemoryRequirements2Fn::name(),
-                // vk::KhrBufferDeviceAddressFn::name(),
-            ],
             ..Default::default()
         },
     }

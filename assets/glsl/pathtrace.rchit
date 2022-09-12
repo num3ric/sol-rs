@@ -1,5 +1,5 @@
 #version 460
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
@@ -41,7 +41,7 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 projection;
     mat4 projection_inverse;
     mat4 model_view_projection;
-    vec3 frame;
+    uvec3 frame;
 } scene;
 
 layout(set = 1, binding = 3, scalar) buffer ScnDesc { SceneInstance i[]; } scnDesc;
@@ -49,9 +49,9 @@ layout(set = 1, binding = 4, scalar) buffer Vertices { ModelVertex v[]; } vertic
 layout(set = 1, binding = 5) buffer Indices { uint64_t i[]; } indices[];
 layout(set = 1, binding = 6, scalar) buffer MatBuffer { MaterialInfo mat; } materials[];
 
-layout(location = 0) rayPayloadInNV Payload prd;
+layout(location = 0) rayPayloadInEXT Payload prd;
 
-hitAttributeNV vec3 attribs;
+hitAttributeEXT vec3 attribs;
 
 void main()
 {
@@ -87,7 +87,7 @@ void main()
 
 	vec3 vertex_color = v0.color.xyz * barycentrics.x + v1.color.xyz * barycentrics.y + v2.color.xyz * barycentrics.z;
 
-	vec3 wI = normalize(gl_WorldRayDirectionNV);
+	vec3 wI = normalize(gl_WorldRayDirectionEXT);
 	vec3 nO = normal * sign( dot(normal, -wI) );
 	float alphaSquared = mat.roughness * mat.roughness;
 	vec2 Xi = nextRand2(prd.rng);
@@ -95,13 +95,13 @@ void main()
 
 	prd.rayOrigin = worldPos + 0.0001 * nO;
 	if( rand < mat.metallic ) {
-		prd.rayDir = sampleGGXDistribution(reflect(gl_WorldRayDirectionNV, nO), Xi, alphaSquared);
+		prd.rayDir = sampleGGXDistribution(reflect(gl_WorldRayDirectionEXT, nO), Xi, alphaSquared);
 		prd.hitValue   = mat.base_color.xyz * vertex_color;
 	}
 	else {
 		vec3 m = sampleGGXDistribution(nO, Xi, alphaSquared);
 		if( rand < fresnelDielectric(nO, m, 1.0/1.5) ) {
-			prd.rayDir = reflect(gl_WorldRayDirectionNV, m);
+			prd.rayDir = reflect(gl_WorldRayDirectionEXT, m);
 			prd.hitValue = vec3(1.0);
 		}
 		else {

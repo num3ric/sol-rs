@@ -35,7 +35,7 @@ impl Vertex for BasicVertex {
         std::mem::size_of::<BasicVertex>() as u32
     }
 
-    fn format_offset() -> Vec<(ash::vk::Format, u32)> {
+    fn format_offset() -> Vec<(vk::Format, u32)> {
         vec![
             (
                 vk::Format::R32G32B32A32_SFLOAT,

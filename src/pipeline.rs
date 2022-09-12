@@ -56,15 +56,15 @@ fn get_shaderc_stage(stage: &vk::ShaderStageFlags) -> Option<ShaderKind> {
         return Some(ShaderKind::TessEvaluation);
     } else if *stage == vk::ShaderStageFlags::GEOMETRY {
         return Some(ShaderKind::Geometry);
-    } else if *stage == vk::ShaderStageFlags::RAYGEN_NV {
+    } else if *stage == vk::ShaderStageFlags::RAYGEN_KHR {
         return Some(ShaderKind::RayGeneration);
-    } else if *stage == vk::ShaderStageFlags::ANY_HIT_NV {
+    } else if *stage == vk::ShaderStageFlags::ANY_HIT_KHR {
         return Some(ShaderKind::AnyHit);
-    } else if *stage == vk::ShaderStageFlags::CLOSEST_HIT_NV {
+    } else if *stage == vk::ShaderStageFlags::CLOSEST_HIT_KHR {
         return Some(ShaderKind::ClosestHit);
-    } else if *stage == vk::ShaderStageFlags::MISS_NV {
+    } else if *stage == vk::ShaderStageFlags::MISS_KHR {
         return Some(ShaderKind::Miss);
-    } else if *stage == vk::ShaderStageFlags::INTERSECTION_NV {
+    } else if *stage == vk::ShaderStageFlags::INTERSECTION_KHR {
         return Some(ShaderKind::Intersection);
     }
     None
@@ -94,7 +94,7 @@ impl Shader {
         let spirv_path = get_spirv_filepath(&path);
         // Only load spirv directly if its timestamp is more recent than the source file.
         if spirv_path.exists() && LOAD_SPIRV && is_more_recent(&spirv_path, &path) {
-            let mut file = std::fs::File::open(&spirv_path).unwrap();
+            let mut file = fs::File::open(&spirv_path).unwrap();
             let words = ash::util::read_spv(&mut file).unwrap();
             let shader_info = vk::ShaderModuleCreateInfo::builder().code(&words);
             unsafe {
@@ -118,6 +118,8 @@ impl Shader {
         let mut compiler = Compiler::new().unwrap();
         let mut options = CompileOptions::new().unwrap();
         options.set_generate_debug_info();
+        options.set_target_spirv(shaderc::SpirvVersion::V1_4);
+        options.set_target_env(shaderc::TargetEnv::Vulkan, shaderc::EnvVersion::Vulkan1_2 as u32);
         let origin_path = path.clone();
         options.set_include_callback(
             move |requested_source, include_type, origin_source, recursion_depth| {
@@ -142,7 +144,7 @@ impl Shader {
             .unwrap();
 
         if STORE_SPIRV {
-            std::fs::write(spirv_path, code.as_binary_u8()).expect("Failed to write spir-v.");
+            fs::write(spirv_path, code.as_binary_u8()).expect("Failed to write spir-v.");
         }
         let shader_info = vk::ShaderModuleCreateInfo::builder().code(code.as_binary());
         unsafe {
@@ -181,7 +183,7 @@ impl Shader {
     }
 }
 
-impl crate::Resource<vk::ShaderModule> for Shader {
+impl Resource<vk::ShaderModule> for Shader {
     fn handle(&self) -> vk::ShaderModule {
         self.module
     }
@@ -202,7 +204,7 @@ pub enum PipelineBlendMode {
     Alpha,
 }
 
-impl std::default::Default for PipelineBlendMode {
+impl Default for PipelineBlendMode {
     fn default() -> Self {
         PipelineBlendMode::Opaque
     }
@@ -225,7 +227,7 @@ pub struct PipelineInfo {
     pub specialization_entries: Vec<vk::SpecializationMapEntry>,
 }
 
-impl std::default::Default for PipelineInfo {
+impl Default for PipelineInfo {
     fn default() -> Self {
         PipelineInfo {
             layout: vk::PipelineLayout::default(),
