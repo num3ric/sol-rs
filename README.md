@@ -1,3 +1,5 @@
+_! To prevent work policy violations, this project is now archived. !_
+
 # sol-rs ☀
 
 `sol-rs` is a small rendering toolkit for Vulkan, with a focus on real-time raytracing (which is not currently available via other APIs such as WebGPU). It hosts convenience wrappers but also exposes [ash](https://github.com/MaikKlein/ash) directly. Tested on Windows/NVIDIA, but the non-raytracing samples also work on Mac via MoltenVK.
